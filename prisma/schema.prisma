@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model accessions {
+  id             String      @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  number         String
+  index          Int         @default(autoincrement())
+  year_index     Int
+  taxon_id       String      @db.Uuid
+  accessioned_on DateTime    @default(now()) @db.Date
+  base_id        String      @db.Uuid
+  data           Json        @default("{}")
+  created_at     DateTime?   @db.Timestamptz(6)
+  bases          bases       @relation(fields: [base_id], references: [id])
+  taxa           taxa        @relation(fields: [taxon_id], references: [id])
+  specimens      specimens[]
+
+  @@index([base_id], name: "accessions_base_id_idx")
+  @@index([data], name: "accessions_data_idx")
+  @@index([number], name: "accessions_number_idx")
+}
+
+model bases {
+  id         String       @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  name       String       @db.VarChar(255)
+  namespace  String?      @db.VarChar(64)
+  accessions accessions[]
+  names      names[]
+
+  @@index([namespace], name: "bases_namespace_idx")
+}
+
+model flora_taxa {
+  id                       String             @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  accepted_name_id         String             @db.Uuid
+  created_by_wfo_ingest_id String             @db.Uuid
+  names                    names              @relation(fields: [accepted_name_id], references: [id])
+  flora_taxa_names         flora_taxa_names[]
+
+  @@index([id], name: "flora_taxa_id_idx")
+}
+
+model flora_taxa_names {
+  flora_taxon_id String      @db.Uuid
+  name_id        String      @db.Uuid
+  status         name_status
+  id             String      @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  ingest_id      String      @db.Uuid
+  flora_taxa     flora_taxa  @relation(fields: [flora_taxon_id], references: [id])
+  names          names       @relation(fields: [name_id], references: [id])
+
+  @@unique([flora_taxon_id, name_id], name: "flora_taxa_names_flora_taxon_id_name_id_idx")
+  @@index([status], name: "flora_taxa_names_status_idx")
+}
+
+model locations {
+  id                                                 String           @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  name                                               String
+  parent_id                                          String?          @db.Uuid
+  base_id                                            String           @db.Uuid
+  locations                                          locations?       @relation("locationsTolocations_parent_id", fields: [parent_id], references: [id])
+  other_locations                                    locations[]      @relation("locationsTolocations_parent_id")
+  locations_tree_locationsTolocations_tree_child_id  locations_tree[] @relation("locationsTolocations_tree_child_id")
+  locations_tree_locationsTolocations_tree_parent_id locations_tree[] @relation("locationsTolocations_tree_parent_id")
+  specimens                                          specimens[]
+
+  @@index([base_id], name: "locations_base_id_idx")
+  @@index([parent_id], name: "locations_parent_id_idx")
+}
+
+model locations_tree {
+  id                                            String    @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  parent_id                                     String    @db.Uuid
+  child_id                                      String    @db.Uuid
+  depth                                         Int
+  base_id                                       String    @db.Uuid
+  locations_locationsTolocations_tree_child_id  locations @relation("locationsTolocations_tree_child_id", fields: [child_id], references: [id])
+  locations_locationsTolocations_tree_parent_id locations @relation("locationsTolocations_tree_parent_id", fields: [parent_id], references: [id])
+
+  @@unique([parent_id, child_id], name: "locations_tree_parent_id_child_id_key")
+  @@index([base_id], name: "locations_tree_base_id_idx")
+  @@index([child_id], name: "locations_tree_child_id_idx")
+  @@index([depth], name: "locations_tree_depth_idx")
+  @@index([parent_id], name: "locations_tree_parent_id_idx")
+}
+
+model names {
+  id                       String             @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  scientific_name          String
+  name_according_to        String?
+  name_published_in        String?
+  name_published_in_year   Int?
+  family                   String?
+  genus                    String?
+  subgenus                 String?
+  specific_epithet         String?
+  infraspecific_epithet    String?
+  name_authorship          String?
+  taxon_remarks            String?
+  taxon_rank               String
+  aggregate                String?
+  microspecies             String?
+  subspecies               String?
+  variety                  String?
+  subvariety               String?
+  form                     String?
+  subform                  Int?
+  group                    String?
+  cultivar                 String?
+  base_id                  String?            @db.Uuid
+  wfo_name_reference       String?
+  created_by_wfo_ingest_id String?            @db.Uuid
+  bases                    bases?             @relation(fields: [base_id], references: [id])
+  flora_taxa               flora_taxa[]
+  flora_taxa_names         flora_taxa_names[]
+  taxa_names               taxa_names[]
+
+  @@index([base_id], name: "names_base_id_idx")
+  @@index([family], name: "names_family_idx")
+  @@index([genus], name: "names_genus_idx")
+  @@index([scientific_name], name: "names_scientific_name_idx")
+  @@index([wfo_name_reference], name: "names_wfo_name_reference_idx")
+}
+
+model red_list_data {
+  id               String            @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  scientific_name  String
+  flora_taxon_id   String?           @db.Uuid
+  category         red_list_category
+  year_assessed    Int
+  red_list_version String
+  current          Boolean           @default(false)
+  ingested_at      DateTime          @db.Timestamptz(6)
+  ingest_id        String            @db.Uuid
+
+  @@index([category], name: "red_list_data_category_idx")
+  @@index([current], name: "red_list_data_current_idx")
+  @@index([flora_taxon_id], name: "red_list_data_flora_taxon_id_idx")
+  @@index([year_assessed], name: "red_list_data_year_assessed_idx")
+}
+
+model specimens {
+  id           String     @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  accession_id String     @db.Uuid
+  qualifier    String
+  quantity     Int        @default(1)
+  location_id  String?    @db.Uuid
+  base_id      String     @db.Uuid
+  data         Json       @default("{}")
+  accessions   accessions @relation(fields: [accession_id], references: [id])
+  locations    locations? @relation(fields: [location_id], references: [id])
+
+  @@index([accession_id], name: "specimens_accession_id_idx")
+  @@index([base_id], name: "specimens_base_id_idx")
+  @@index([data], name: "specimens_data_idx")
+  @@index([location_id], name: "specimens_location_id_idx")
+}
+
+model taxa {
+  id             String       @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  flora_taxon_id String?      @db.Uuid
+  base_id        String       @db.Uuid
+  data           Json         @default("{}")
+  accessions     accessions[]
+  taxa_names     taxa_names[]
+
+  @@index([base_id], name: "taxa_base_id_idx")
+  @@index([data], name: "taxa_data_idx")
+  @@index([flora_taxon_id], name: "taxa_flora_taxon_id_idx")
+}
+
+model taxa_names {
+  taxon_id String      @db.Uuid
+  name_id  String      @db.Uuid
+  status   name_status
+  base_id  String      @db.Uuid
+  names    names       @relation(fields: [name_id], references: [id])
+  taxa     taxa        @relation(fields: [taxon_id], references: [id])
+
+  @@unique([taxon_id, name_id], name: "taxa_names_key")
+  @@unique([taxon_id, name_id], name: "taxa_names_taxon_id_name_id_idx")
+  @@index([base_id], name: "taxa_names_base_id_idx")
+  @@index([status], name: "taxa_names_status_idx")
+}
+
+model taxon_determinations {
+  id            String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  determined_by String?
+  determined_on DateTime @db.Date
+  taxon_id      String   @db.Uuid
+  accession_id  String   @db.Uuid
+  base_id       String   @db.Uuid
+
+  @@index([accession_id], name: "taxon_determinations_accession_id_idx")
+  @@index([base_id], name: "taxon_determinations_base_id_idx")
+  @@index([taxon_id], name: "taxon_determinations_taxon_id_idx")
+}
+
+enum name_status {
+  accepted
+  synonym
+  unknown
+}
+
+enum red_list_category {
+  DD
+  LC
+  NT
+  VU
+  EN
+  CR
+  EW
+  EX
+}
