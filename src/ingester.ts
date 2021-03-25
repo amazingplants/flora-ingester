@@ -1,76 +1,92 @@
-import dotenv from 'dotenv'
-dotenv.config()
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient({log: [/*'query',*/ `warn`, `error`]})
-import parse from 'csv-parse'
-import fs from 'fs'
-import stream from 'stream'
-import util from 'util'
-const pipeline = util.promisify(stream.pipeline)
-import streamify from 'async-stream-generator'
-import { v4 as uuidv4 } from 'uuid'
+import { batcher, logDeep } from './support'
 
-async function* batcher(iterable, batchSize = 5) {
-  let batch = []
-  for await (const chunk of iterable) {
-    batch.push(chunk)
-    if(batch.length === batchSize || iterable.readableEnded) {
-      yield batch
-      batch = []
-    }
+import { PrismaClient } from '@prisma/client'
+import fs from 'fs'
+import parse from 'csv-parse'
+import stream from 'stream'
+import streamify from 'async-stream-generator'
+import util from 'util'
+
+const pipeline = util.promisify(stream.pipeline)
+const prisma = new PrismaClient({ log: [/*'query',*/ `warn`, `error`] })
+
+function nameDataFromRecord(record, ingestId) {
+  // TODO all rank epithets
+  return {
+    scientific_name: record.scientificName,
+    family: record.family,
+    genus: record.genus,
+    specific_epithet: record.specificEpithet,
+    infraspecific_epithet: record.infraspecificEpithet,
+    name_authorship: record.scientificNameAuthorship,
+    taxon_rank: record.taxonRank.toLowerCase(),
+    wfo_name_reference: record.taxonID,
+    created_by_wfo_ingest_id: ingestId,
   }
 }
 
-const main = async () => {
+function normalizeStatus(status) {
+  if (status === 'Accepted') {
+    return 'accepted'
+  }
+  if (status === 'Synonym') {
+    return 'synonym'
+  }
+  return 'unknown'
+}
 
-  console.info('Starting WFO ingest with ID ', INGEST_ID)
+async function fetchNames(records) {
+  return await prisma.names.findMany({
+    where: {
+      wfo_name_reference: {
+        in: records.map((record) => record.taxonID),
+      },
+    },
+    include: {
+      flora_taxa_names: {
+        where: {
+          ingest_id: process.env.ACTIVE_INGEST_ID,
+        },
+      },
+    },
+  })
+}
+
+export async function ingest({ ingestId }) {
+  console.info('Starting WFO ingest with ID ', ingestId)
 
   const readStream = fs.createReadStream(`./local-data/classification-11.txt`)
 
   const csvParser = parse({
     delimiter: '\t',
     relax: true,
-    columns: true
+    columns: true,
   })
 
-  pipeline(readStream, csvParser)
+  await pipeline(readStream, csvParser)
 
   const batches = streamify(batcher(csvParser, 3))
-  
+
   for await (const batch of batches) {
-
     // 1) Fetch names joined to "current" flora_taxon_names by wfo-* ID
-    const names = await prisma.names.findMany({
-      where: {
-        wfo_name_reference: {
-          in: batch.map(record => record.taxonID)
-        }
-      },
-      include: {
-        flora_taxa_names: {
-          where: {
-            ingest_id: process.env.ACTIVE_INGEST_ID
-          }
-        }
-      }
-    })
+    const names = await fetchNames(batch)
 
-
-    for(var record of batch) {
-
-
+    for (var record of batch) {
       // 2a) For Accepted records relating to names that don't exist by wfo-* ID, insert them, and insert taxa and flora_taxon_names
 
-      if(record.taxonomicStatus === "Accepted" && !names.find(n => n.wfo_name_reference === record.taxonID)) {
+      if (
+        record.taxonomicStatus === 'Accepted' &&
+        !names.find((n) => n.wfo_name_reference === record.taxonID)
+      ) {
         let insertedName = await prisma.names.create({
-          data: nameDataFromRecord(record)
+          data: nameDataFromRecord(record, ingestId),
         })
 
         let insertedTaxon = await prisma.flora_taxa.create({
           data: {
             accepted_name_id: insertedName.id,
-            created_by_wfo_ingest_id: INGEST_ID
-          }
+            created_by_wfo_ingest_id: ingestId,
+          },
         })
 
         let insertedFloraTaxonName = await prisma.flora_taxa_names.create({
@@ -78,8 +94,8 @@ const main = async () => {
             flora_taxon_id: insertedTaxon.id,
             name_id: insertedName.id,
             status: normalizeStatus(record.taxonomicStatus),
-            ingest_id: INGEST_ID
-          }
+            ingest_id: ingestId,
+          },
         })
       }
 
@@ -90,8 +106,6 @@ const main = async () => {
 
       // 3) For Accepted records, check the flora_taxon_names_unmatched table by wfo-* ID and current ingest ID
       // 3a) If a row exists, insert the flora_taxon_id from (1), and the name_id and status from flora_taxon_names_unmatched. Mark the row from flora_taxon_names_unmatched "resolved"
-
-
 
       /*{
         taxonID: 'wfo-0000000003',
@@ -116,48 +130,4 @@ const main = async () => {
       }*/
     }
   }
-
-  await logStats()
-
-  process.exit()
-
-};
-
-const INGEST_ID = uuidv4()
-
-main()
-
-function logDeep(obj) {
-  console.log(util.inspect(obj, {showHidden: false, depth: null}))
-}
-
-function nameDataFromRecord(record) {
-  // TODO all rank epithets
-  return {
-    scientific_name: record.scientificName,
-    family: record.family,
-    genus: record.genus,
-    specific_epithet: record.specificEpithet,
-    infraspecific_epithet: record.infraspecificEpithet,
-    name_authorship: record.scientificNameAuthorship,
-    taxon_rank: record.taxonRank.toLowerCase(),
-    wfo_name_reference: record.taxonID,
-    created_by_wfo_ingest_id: INGEST_ID
-  }
-}
-
-function normalizeStatus(status) {
-  if(status === "Accepted") { return "accepted" }
-  if(status === "Synonym") { return "synonym" }
-  return "unknown"
-}
-
-async function logStats() {
-  const insertedNamesCount = await prisma.names.count({
-    where: {
-      created_by_wfo_ingest_id: INGEST_ID
-    }
-  })
-
-  console.info('Created', insertedNamesCount, 'names')
 }

@@ -1,0 +1,20 @@
+{
+  // eslint extension options
+  "eslint.validate": [
+    "javascript", 
+    "typescript",
+  ],
+  
+  // prettier extension setting
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "prettier.configPath": ".prettierrc.js",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
