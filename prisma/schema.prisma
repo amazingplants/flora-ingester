@@ -38,9 +38,7 @@ model bases {
 
 model flora_taxa {
   id                       String             @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  accepted_name_id         String             @db.Uuid
   created_by_wfo_ingest_id String             @db.Uuid
-  names                    names              @relation(fields: [accepted_name_id], references: [id])
   flora_taxa_names         flora_taxa_names[]
 
   @@index([id], name: "flora_taxa_id_idx")
@@ -117,7 +115,6 @@ model names {
   wfo_name_reference       String?
   created_by_wfo_ingest_id String?            @db.Uuid
   bases                    bases?             @relation(fields: [base_id], references: [id])
-  flora_taxa               flora_taxa[]
   flora_taxa_names         flora_taxa_names[]
   taxa_names               taxa_names[]
 

@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "NODE_ENV=production node dist",
+    "dev": "tsc && NODE_ENV=development node dist",
+    "test": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest",
+    "test-watch": "tsc -w && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --watch "
   },
   "author": "Toby Marsden",
   "license": "AGPL-3.0-only",
@@ -14,14 +16,18 @@
     "async-stream-generator": "^1.0.3",
     "batch-stream": "^0.1.3",
     "csv-parse": "^4.15.3",
+    "custom-env": "^2.0.1",
     "dotenv": "^8.2.0",
+    "jest": "^27.0.0-next.6",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/async-stream-generator": "^1.0.0",
+    "@types/jest": "^26.0.22",
     "@types/node": "^14.14.35",
     "@types/uuid": "^8.3.0",
     "prisma": "^2.18.0",
+    "ts-jest": "^27.0.0-next.9",
     "typescript": "^4.2.3"
   }
 }

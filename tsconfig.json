@@ -1,12 +1,17 @@
 {
   "compilerOptions": {
+    "baseUrl": "./src",
     "target": "es2018",
     "esModuleInterop": true,
     "module": "commonjs",
     "lib": ["es2018", "esnext.asynciterable"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "allowJs": true
 }

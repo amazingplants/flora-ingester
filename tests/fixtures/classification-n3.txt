@@ -1,0 +1,4 @@
+taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-0000000001	195146-1	Cirsium caput-medusae	SPECIES		Schur ex Nyman	Asteraceae	Cirsium	caput-medusae				408 1879	Synonym	wfo-0000027702		2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-1
+wfo-0000027702	196038-1	Cirsium spinosissimum	SPECIES	wfo-4000008373	(L.) Scop.	Asteraceae	Cirsium	spinosissimum				129 1772	Accepted			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-126774
+wfo-0000000002	23920-2	Aster persaliens	SPECIES	wfo-4000003381	E.S.Burgess	Asteraceae	Aster	persaliens				Mem. Torrey Bot. Club 13 140 1906	Unchecked			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-10
