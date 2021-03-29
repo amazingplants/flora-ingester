@@ -13,7 +13,6 @@ import cliProgress from 'cli-progress'
 import fs from 'fs'
 import parse from 'csv-parse'
 import stream from 'stream'
-import streamify from 'async-stream-generator'
 import util from 'util'
 
 const pipeline = util.promisify(stream.pipeline)
@@ -211,7 +210,7 @@ async function insertSynonymFloraTaxaNames(
 }
 
 async function loadClassification(filePath: string) {
-  const readStream = fs.createReadStream(filePath)
+  const readStream = fs.createReadStream(filePath, { encoding: 'utf-8' })
 
   const csvParser = parse({
     delimiter: '\t',
@@ -219,9 +218,10 @@ async function loadClassification(filePath: string) {
     columns: true,
   })
 
-  await pipeline(readStream, csvParser)
+  //await pipeline(readStream, csvParser) <-- noworkee?
+  readStream.pipe(csvParser)
 
-  return streamify(batcher(csvParser, 200))
+  return batcher(csvParser, 1000)
 }
 
 // Sample record format:

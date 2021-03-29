@@ -7,10 +7,14 @@ export async function* batcher(iterable, batchSize: number = 5) {
   let batch = []
   for await (const chunk of iterable) {
     batch.push(chunk)
-    if (batch.length === batchSize || iterable.readableEnded) {
+    if (batch.length === batchSize) {
       yield batch
       batch = []
     }
+  }
+  // flush final items
+  if (batch.length > 0) {
+    yield batch
   }
 }
 

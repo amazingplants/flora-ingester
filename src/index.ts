@@ -10,5 +10,5 @@ const ingestId = uuidv4()
 ;(async () => {
   await ingest(ingestId, './local-data/classification.txt')
   await logStats(ingestId)
-  //process.exit()
+  process.exit()
 })()
