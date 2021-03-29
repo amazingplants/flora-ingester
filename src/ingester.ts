@@ -2,12 +2,14 @@ import {
   VALID_TAXONOMIC_STATUSES,
   acceptedOrUncheckedStatusFilter,
   batcher,
+  countLines,
   logDeep,
   normalizeStatus,
   synonymStatusFilter,
 } from './support'
 
 import { PrismaClient } from '@prisma/client'
+import cliProgress from 'cli-progress'
 import fs from 'fs'
 import parse from 'csv-parse'
 import stream from 'stream'
@@ -20,7 +22,7 @@ const prisma = new PrismaClient({ log: [/*'query'*/ `warn`, `error`] })
 function nameDataFromRecord(record: any, ingestId: string, options?: any) {
   // TODO all rank epithets
   return {
-    id: options && options.id ? options.id : null,
+    id: options && options.id ? options.id : undefined,
     scientific_name: record.scientificName,
     family: record.family,
     genus: record.genus,
@@ -71,7 +73,8 @@ async function insertMissingNames(
     if (!names.find((n) => n.wfo_name_reference === record.taxonID)) {
       let insertedName = await prisma.names.create({
         data: nameDataFromRecord(record, ingestId, {
-          id: options ? options.uuids.names.shift() : undefined,
+          id:
+            options && options.uuids ? options.uuids.names.shift() : undefined,
         }),
       })
       insertedNames.push(insertedName)
@@ -117,7 +120,10 @@ async function findOrInsertFloraTaxa(
     if (!foundFloraTaxon) {
       createdFloraTaxon = await prisma.flora_taxa.create({
         data: {
-          id: options ? options.uuids.flora_taxa.shift() : undefined,
+          id:
+            options && options.uuids
+              ? options.uuids.flora_taxa.shift()
+              : undefined,
           created_by_wfo_ingest_id: ingestId,
         },
       })
@@ -144,7 +150,10 @@ async function insertFloraTaxaName(
   const name = names.find((n) => n.wfo_name_reference === record.taxonID)
   let insertedFloraTaxonName = await prisma.flora_taxa_names.create({
     data: {
-      id: options ? options.uuids.flora_taxa_names.shift() : undefined,
+      id:
+        options && options.uuids
+          ? options.uuids.flora_taxa_names.shift()
+          : undefined,
       flora_taxon_id: floraTaxon.id,
       name_id: name.id,
       status: normalizeStatus(record.taxonomicStatus),
@@ -187,6 +196,16 @@ async function insertSynonymFloraTaxaNames(
       ),
     )
 
+    if (!floraTaxon) {
+      console.error(
+        'Could not find record',
+        record.acceptedNameUsageID,
+        ', recorded as the accepted name of record ',
+        record.taxonID,
+      )
+      process.exit(1)
+    }
+
     await insertFloraTaxaName(floraTaxon, names, ingestId, record, options)
   }
 }
@@ -202,7 +221,7 @@ async function loadClassification(filePath: string) {
 
   await pipeline(readStream, csvParser)
 
-  return streamify(batcher(csvParser, 3))
+  return streamify(batcher(csvParser, 200))
 }
 
 // Sample record format:
@@ -245,9 +264,21 @@ export async function ingest(
     options.disconnectDatabase = true
   }
   console.info('Starting WFO ingest with ID ', ingestId)
+  const totalRecords = await countLines(filePath)
 
   // Load the TSV file, parse it, batch the records and make an iterable
   const firstPassBatches = await loadClassification(filePath)
+
+  console.info()
+  console.info('Ingesting accepted/unknown names')
+
+  let firstPassProgress = 0
+
+  const firstPassBar = new cliProgress.SingleBar(
+    {},
+    cliProgress.Presets.shades_classic,
+  )
+  firstPassBar.start(totalRecords, 0)
 
   for await (const batch of firstPassBatches) {
     // Fetch names joined to "current" flora_taxon_names by wfo-* ID
@@ -268,11 +299,28 @@ export async function ingest(
       ingestId,
       options,
     )
+
+    firstPassProgress += batch.length
+    firstPassBar.update(firstPassProgress)
   }
+
+  firstPassBar.update(totalRecords)
+  firstPassBar.stop()
 
   // Load/parse/batch the TSV file again so we can handle synonyms
   // We do this in a second pass so we don't have to keep the whole file in memory
   const secondPassBatches = await loadClassification(filePath)
+
+  console.info()
+  console.info('Ingesting synonyms')
+
+  let secondPassProgress = 0
+
+  const secondPassBar = new cliProgress.SingleBar(
+    {},
+    cliProgress.Presets.shades_classic,
+  )
+  secondPassBar.start(totalRecords, 0)
 
   // For eacn Synonym, find the name record by wfo-* ID, and look up the accepted flora_taxon by acceptedNameUsageId,
   // then insert the flora_taxa_names record
@@ -285,7 +333,11 @@ export async function ingest(
       ingestId,
       options,
     )
+
+    secondPassProgress += batch.length
+    secondPassBar.update(secondPassProgress)
   }
+  secondPassBar.update(totalRecords)
 
   if (options.disconnectDatabase) {
     await prisma.$disconnect()

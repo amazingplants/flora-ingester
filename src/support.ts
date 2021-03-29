@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import fs from 'fs'
 import util from 'util'
 const prisma = new PrismaClient({ log: [/*'query',*/ `warn`, `error`] })
 
@@ -24,6 +25,7 @@ export async function logStats(ingestId: string) {
     },
   })
 
+  console.info()
   console.info('Created', insertedNamesCount, 'names')
 }
 
@@ -45,4 +47,23 @@ export function normalizeStatus(status) {
     return 'synonym'
   }
   return 'unknown'
+}
+
+export async function countLines(filePath) {
+  return new Promise((resolve, reject) => {
+    let lineCount = 0
+    fs.createReadStream(filePath)
+      .on('data', (buffer) => {
+        let idx = -1
+        lineCount-- // Because the loop will run once for idx=-1
+        do {
+          idx = buffer.indexOf('\n', idx + 1)
+          lineCount++
+        } while (idx !== -1)
+      })
+      .on('end', () => {
+        resolve(lineCount - 1)
+      })
+      .on('error', reject)
+  })
 }

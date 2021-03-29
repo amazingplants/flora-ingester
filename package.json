@@ -15,8 +15,10 @@
     "@prisma/client": "^2.18.0",
     "async-stream-generator": "^1.0.3",
     "batch-stream": "^0.1.3",
+    "cli-progress": "^3.9.0",
     "csv-parse": "^4.15.3",
     "custom-env": "^2.0.1",
+    "debug-stream": "^3.0.1",
     "dotenv": "^8.2.0",
     "jest": "^27.0.0-next.6",
     "uuid": "^8.3.2"
