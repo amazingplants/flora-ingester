@@ -1,0 +1,2 @@
+taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-0000582370		Camellia grandibracteata	SPECIES		H.T.Chang & C.X.Ye	Theaceae	Camellia	grandibracteata				Acta Sci. Nat. Univ. Sunyatseni 1984(1): 3 1984	Synonym	wfo-0000582370		2012-03-26	2012-03-26	http://www.theplantlist.org/tpl1.1/record/kew-2694584

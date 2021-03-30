@@ -33,21 +33,41 @@ export async function logStats(ingestId: string) {
   console.info('Created', insertedNamesCount, 'names')
 }
 
-export const VALID_TAXONOMIC_STATUSES = ['Accepted', 'Synonym', 'Unchecked']
+export const VALID_TAXONOMIC_STATUSES = [
+  'accepted',
+  'synonym',
+  'unchecked',
+  'homotypicsynonym',
+  'heterotypicsynonym',
+  'ambiguous',
+]
 
 export function acceptedOrUncheckedStatusFilter(record) {
-  return ['Accepted', 'Unchecked'].indexOf(record.taxonomicStatus) > -1
+  return ['accepted', 'unknown'].indexOf(normalizedStatus(record)) > -1
 }
 
 export function synonymStatusFilter(record) {
-  return record.taxonomicStatus === 'Synonym'
+  return normalizedStatus(record) === 'synonym'
 }
 
-export function normalizeStatus(status) {
-  if (status === 'Accepted') {
+export function relevantTaxonRanksFilter(record) {
+  return record.taxonRank !== 'family'
+}
+
+export function normalizedStatus(record) {
+  let status = record.taxonomicStatus.toLowerCase()
+  // Sometimes WFO records are a synonym of themselves -- therefore, unknown
+  if (status === 'synonym' && record.acceptedNameUsageID === record.taxonID) {
+    return 'unknown'
+  }
+  if (status === 'accepted') {
     return 'accepted'
   }
-  if (status === 'Synonym') {
+  if (
+    status === 'synonym' ||
+    status === 'homotypicsynonym' ||
+    status === 'heterotypicsynonym'
+  ) {
     return 'synonym'
   }
   return 'unknown'

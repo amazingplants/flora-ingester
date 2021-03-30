@@ -39,3 +39,36 @@ describe('with no existing data', () => {
 
   afterAll(closeDatabaseConnection)
 })
+
+describe('with a record that is a synonym of itself', () => {
+  beforeEach(async () => {
+    await resetDatabase()
+    await ingest(
+      currentIngestId,
+      './tests/fixtures/classification-self-synonym.txt',
+      {
+        uuids: uuidGenerator(),
+      },
+    )
+    dbSnapshot = await createDbSnapshot()
+  })
+
+  test('creates flora_taxa', () => {
+    expect(dbSnapshot.flora_taxa.length).toBe(1)
+    expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.selfSynonym.flora_taxa)
+  })
+
+  test('creates names', () => {
+    expect(dbSnapshot.names.length).toBe(1)
+    expect(dbSnapshot.names).toMatchObject(fixtures.selfSynonym.names)
+  })
+
+  test('creates flora_taxa_names', () => {
+    expect(dbSnapshot.flora_taxa_names.length).toBe(1)
+    expect(dbSnapshot.flora_taxa_names).toMatchObject(
+      fixtures.selfSynonym.flora_taxa_names,
+    )
+  })
+
+  afterAll(closeDatabaseConnection)
+})
