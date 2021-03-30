@@ -4,6 +4,7 @@ import {
   batcher,
   countLines,
   logDeep,
+  normalizedRecordStatus,
   normalizedStatus,
   relevantTaxonRanksFilter,
   synonymStatusFilter,
@@ -17,7 +18,31 @@ import stream from 'stream'
 import util from 'util'
 
 const pipeline = util.promisify(stream.pipeline)
-const prisma = new PrismaClient({ log: [/*'query'*/ `warn`, `error`] })
+
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+    {
+      emit: 'stdout',
+      level: 'error',
+    },
+    {
+      emit: 'stdout',
+      level: 'warn',
+    },
+  ],
+})
+
+if (process.env.DEBUG) {
+  prisma.$on('query', (e) => {
+    console.log('Query: ' + e.query)
+    console.log('Params: ' + e.params)
+    console.log('Duration: ' + e.duration + 'ms')
+  })
+}
 
 function nameDataFromRecord(record: any, ingestId: string, options?: any) {
   // TODO all rank epithets
@@ -32,6 +57,10 @@ function nameDataFromRecord(record: any, ingestId: string, options?: any) {
     name_published_in: record.namePublishedIn,
     taxon_rank: record.taxonRank.toLowerCase(),
     wfo_name_reference: record.taxonID,
+    wfo_data: {
+      accepted_name_reference: record.acceptedNameUsageID,
+      normalized_status: normalizedRecordStatus(record),
+    },
     created_by_wfo_ingest_id: ingestId,
   }
 }
@@ -53,6 +82,35 @@ async function fetchNames(records: any[]) {
   })
 }
 
+async function findAcceptedFloraTaxonRecursive(
+  acceptedNameReference,
+  depth = 0,
+): Promise<any> {
+  if (depth >= 3) {
+    return null
+  }
+  let name = await prisma.names.findFirst({
+    where: {
+      wfo_name_reference: acceptedNameReference,
+    },
+    include: { flora_taxa_names: { include: { flora_taxa: true } } },
+  })
+  let status = name.wfo_data['normalized_status']
+  if (status === 'synonym') {
+    depth++
+    return await findAcceptedFloraTaxonRecursive(
+      name.wfo_data['accepted_name_reference'],
+      depth,
+    )
+  }
+  if (status === 'accepted') {
+    const flora_taxa_name = name.flora_taxa_names.find(
+      (ftn) => ftn.status === 'accepted',
+    )
+    return flora_taxa_name ? flora_taxa_name.flora_taxa : null
+  }
+}
+
 async function insertMissingNames(
   batch,
   names,
@@ -70,7 +128,7 @@ async function insertMissingNames(
         record.taxonomicStatus,
         record,
       )
-      process.exit(1)
+      throw new Error('ERR_INVALID_TAXONOMIC_STATUS')
     }
 
     // If a name doesn't exist already, linked to this wfo-* ID, create it
@@ -159,7 +217,7 @@ async function insertFloraTaxaName(
           : undefined,
       flora_taxon_id: floraTaxon.id,
       name_id: name.id,
-      status: normalizedStatus(record),
+      status: normalizedRecordStatus(record),
       ingest_id: ingestId,
     },
   })
@@ -171,7 +229,7 @@ async function insertSynonymFloraTaxaNames(
   ingestId,
   options,
 ) {
-  // Get the accepted flora_taxa by acceptedNameUsageId
+  // Get the accepted flora_taxa by acceptedNameUsageID
   const acceptedFloraTaxa = await prisma.flora_taxa.findMany({
     where: {
       flora_taxa_names: {
@@ -193,11 +251,18 @@ async function insertSynonymFloraTaxaNames(
 
   for (var record of filteredBatch) {
     // Insert the flora_taxa_names record
-    const floraTaxon = acceptedFloraTaxa.find((t) =>
+    let floraTaxon = acceptedFloraTaxa.find((t) =>
       t.flora_taxa_names.find(
         (tn) => tn.names.wfo_name_reference === record.acceptedNameUsageID,
       ),
     )
+
+    // If the record's "accepted" name is actually another synonym, follow down the rabbit hole to find the correct flora taxon
+    if (!floraTaxon) {
+      floraTaxon = await findAcceptedFloraTaxonRecursive(
+        record.acceptedNameUsageID,
+      )
+    }
 
     if (!floraTaxon) {
       console.error(
@@ -206,7 +271,7 @@ async function insertSynonymFloraTaxaNames(
         ', recorded as the accepted name of record ',
         record.taxonID,
       )
-      process.exit(1)
+      throw new Error('ACCEPTED_RECORD_NOT_FOUND')
     }
 
     await insertFloraTaxaName(floraTaxon, names, ingestId, record, options)
@@ -331,7 +396,7 @@ export async function ingest(
     )
     secondPassBar.start(totalRecords, 0)
 
-    // For eacn Synonym, find the name record by wfo-* ID, and look up the accepted flora_taxon by acceptedNameUsageId,
+    // For eacn Synonym, find the name record by wfo-* ID, and look up the accepted flora_taxon by acceptedNameUsageID,
     // then insert the flora_taxa_names record
     for await (const batch of secondPassBatches) {
       let names = await fetchNames(batch)
@@ -347,6 +412,7 @@ export async function ingest(
       secondPassBar.update(secondPassProgress)
     }
     secondPassBar.update(totalRecords)
+    secondPassBar.stop()
 
     //await prisma.$executeRaw(`END TRANSACTION;`)
   } catch (err) {

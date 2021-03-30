@@ -43,23 +43,27 @@ export const VALID_TAXONOMIC_STATUSES = [
 ]
 
 export function acceptedOrUncheckedStatusFilter(record) {
-  return ['accepted', 'unknown'].indexOf(normalizedStatus(record)) > -1
+  return ['accepted', 'unknown'].indexOf(normalizedRecordStatus(record)) > -1
 }
 
 export function synonymStatusFilter(record) {
-  return normalizedStatus(record) === 'synonym'
+  return normalizedRecordStatus(record) === 'synonym'
 }
 
 export function relevantTaxonRanksFilter(record) {
-  return record.taxonRank !== 'family'
+  return record.taxonRank !== 'family' && record.taxonRank !== 'genus'
 }
 
-export function normalizedStatus(record) {
+export function normalizedRecordStatus(record) {
   let status = record.taxonomicStatus.toLowerCase()
   // Sometimes WFO records are a synonym of themselves -- therefore, unknown
   if (status === 'synonym' && record.acceptedNameUsageID === record.taxonID) {
     return 'unknown'
   }
+  return normalizedStatus(status)
+}
+
+export function normalizedStatus(status) {
   if (status === 'accepted') {
     return 'accepted'
   }

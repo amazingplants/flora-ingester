@@ -72,3 +72,66 @@ describe('with a record that is a synonym of itself', () => {
 
   afterAll(closeDatabaseConnection)
 })
+
+describe('with a record that is a synonym of another synonym', () => {
+  beforeEach(async () => {
+    await resetDatabase()
+    await ingest(
+      currentIngestId,
+      './tests/fixtures/classification-recursive-synonym.txt',
+      {
+        uuids: uuidGenerator(),
+      },
+    )
+    dbSnapshot = await createDbSnapshot()
+  })
+
+  test('creates flora_taxa', () => {
+    expect(dbSnapshot.flora_taxa.length).toBe(1)
+    expect(dbSnapshot.flora_taxa).toMatchObject(
+      fixtures.recursiveSynonym.flora_taxa,
+    )
+  })
+
+  test('creates names', () => {
+    expect(dbSnapshot.names.length).toBe(3)
+    expect(dbSnapshot.names).toMatchObject(fixtures.recursiveSynonym.names)
+  })
+
+  test('creates flora_taxa_names', () => {
+    expect(dbSnapshot.flora_taxa_names.length).toBe(3)
+    expect(dbSnapshot.flora_taxa_names).toMatchObject(
+      fixtures.recursiveSynonym.flora_taxa_names,
+    )
+  })
+
+  afterAll(closeDatabaseConnection)
+})
+
+describe('with records that are composed of families and genera', () => {
+  beforeEach(async () => {
+    await resetDatabase()
+    await ingest(
+      currentIngestId,
+      './tests/fixtures/classification-irrelevant.txt',
+      {
+        uuids: uuidGenerator(),
+      },
+    )
+    dbSnapshot = await createDbSnapshot()
+  })
+
+  test('does not create flora_taxa', () => {
+    expect(dbSnapshot.flora_taxa.length).toBe(0)
+  })
+
+  test('does not create names', () => {
+    expect(dbSnapshot.names.length).toBe(0)
+  })
+
+  test('does not create flora_taxa_names', () => {
+    expect(dbSnapshot.flora_taxa_names.length).toBe(0)
+  })
+
+  afterAll(closeDatabaseConnection)
+})

@@ -1,0 +1,4 @@
+taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-0001021892		Iochroma australe	SPECIES	wfo-4000019120	Griseb.	Solanaceae	Iochroma	australe				Griseb., Abh. Königl. Ges. Wiss. Göttingen 19: 218. 1874, 1874.	Accepted					http://solanaceaesource.org/solanaceae/iochroma-australe
+wfo-0001019155		Acnistus australis	SPECIES		(Griseb.) Griseb.	Solanaceae	Acnistus	australis				(G. ) Griseb., Symb. Fl. Argent.: 247 (1879)..	Synonym	wfo-0001021892				http://solanaceaesource.org/solanaceae/acnistus-australis
+wfo-0001019156		Acnistus australis var. australis	VARIETY			Solanaceae	Acnistus	australis	australis	var.			Synonym	wfo-0001019155				http://solanaceaesource.org/solanaceae/acnistus-australis-var-australis

@@ -24,7 +24,7 @@ model flora_taxa_names {
   flora_taxa     flora_taxa  @relation(fields: [flora_taxon_id], references: [id])
   names          names       @relation(fields: [name_id], references: [id])
 
-  @@unique([flora_taxon_id, name_id], name: "flora_taxa_names_flora_taxon_id_name_id_idx")
+  @@unique([flora_taxon_id, name_id, ingest_id], name: "flora_taxa_names_flora_taxon_id_name_id_idx")
   @@index([status], name: "flora_taxa_names_status_idx")
 }
 
@@ -54,28 +54,18 @@ model names {
   base_id                  String?            @db.Uuid
   wfo_name_reference       String?
   created_by_wfo_ingest_id String?            @db.Uuid
+  wfo_data                 Json?
   flora_taxa_names         flora_taxa_names[]
 
   @@index([base_id], name: "names_base_id_idx")
   @@index([family], name: "names_family_idx")
   @@index([genus], name: "names_genus_idx")
   @@index([scientific_name], name: "names_scientific_name_idx")
-  @@index([wfo_name_reference], name: "names_wfo_name_reference_idx")
+  @@index([wfo_data], name: "names_wfo_data_idx")
 }
 
 enum name_status {
   accepted
   synonym
   unknown
-}
-
-enum red_list_category {
-  DD
-  LC
-  NT
-  VU
-  EN
-  CR
-  EW
-  EX
 }

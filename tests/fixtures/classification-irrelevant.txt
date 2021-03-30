@@ -1,0 +1,3 @@
+taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-4000019120	331673-2	Iochroma	genus	wfo-7000000572	Benth.	Solanaceae						R.  ex Boiss. and R.  ex Boiss., in Lindley, Bot. Reg. 31, t. 20., 1845.	Accepted					http://solanaceaesource.org/solanaceae/iochroma
+wfo-7000000003		Achatocarpaceae	family	wfo-9000000088	Heimerl	Achatocarpaceae						Nat. Pflanzenfam. (ed. 2) 16c: 174. 1934. (28 Apr 1934)	Accepted					http://www.mobot.org/MOBOT/research/APweb/orders/caryophyllalesweb.htm#Achatocarpaceae 
