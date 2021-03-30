@@ -1,0 +1,4 @@
+taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-0000000005		Xeranthemum neumayeri	SPECIES	wfo-4000040932	Baill.	Asteraceae	Xeranthemum	neumayeri				in Bull. Soc. Linn. Par. i. (1880) 266.	Unchecked			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-10000
+wfo-0000000006		Hasteola hastata	SPECIES		(L.) Pojark.	Asteraceae	Hasteola	hastata				1960	Synonym	wfo-0000064637		2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-100000
+wfo-0000064637	982970-1	Parasenecio hastatus	SPECIES	wfo-4000028150	(L.) H.Koyama	Asteraceae	Parasenecio	hastatus				52 1995	Accepted			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-21586
