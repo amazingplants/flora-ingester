@@ -170,33 +170,50 @@ async function findOrInsertFloraTaxa(
     },
     include: { flora_taxa_names: { include: { names: true } } },
   })
+
+  const createdFloraTaxa = []
+  const createdFloraTaxaNames = []
+
   for (const record of filteredBatch) {
     const foundFloraTaxon = floraTaxa.find((t) =>
       t.flora_taxa_names.find(
         (tn) => tn.names.wfo_name_reference === record.taxonID,
       ),
     )
+
     let createdFloraTaxon
     if (!foundFloraTaxon) {
-      createdFloraTaxon = await prisma.flora_taxa.create({
-        data: {
-          id:
-            options && options.uuids
-              ? options.uuids.flora_taxa.shift()
-              : undefined,
-          created_by_wfo_ingest_id: ingestId,
-        },
-      })
+      createdFloraTaxon = {
+        id:
+          options && options.uuids
+            ? options.uuids.flora_taxa.shift()
+            : uuidv4(),
+        created_by_wfo_ingest_id: ingestId,
+      }
+      createdFloraTaxa.push(createdFloraTaxon)
     }
 
-    await insertFloraTaxaName(
-      foundFloraTaxon || createdFloraTaxon,
-      names,
-      ingestId,
-      record,
-      options,
-    )
+    const name = names.find((n) => n.wfo_name_reference === record.taxonID)
+    let createdFloraTaxaName = {
+      id:
+        options && options.uuids
+          ? options.uuids.flora_taxa_names.shift()
+          : uuidv4(),
+      flora_taxon_id: (createdFloraTaxon || foundFloraTaxon).id,
+      name_id: name.id,
+      status: normalizedRecordStatus(record),
+      ingest_id: ingestId,
+    }
+    createdFloraTaxaNames.push(createdFloraTaxaName)
   }
+
+  await prisma.flora_taxa.createMany({
+    data: createdFloraTaxa,
+  })
+
+  await prisma.flora_taxa_names.createMany({
+    data: createdFloraTaxaNames,
+  })
 }
 
 // - Create a flora_taxa_name for each Accepted/Unchecked name
