@@ -16,6 +16,7 @@ import fs from 'fs'
 import parse from 'csv-parse'
 import stream from 'stream'
 import util from 'util'
+import { v4 as uuidv4 } from 'uuid'
 
 const pipeline = util.promisify(stream.pipeline)
 
@@ -133,15 +134,13 @@ async function insertMissingNames(
 
     // If a name doesn't exist already, linked to this wfo-* ID, create it
     if (!names.find((n) => n.wfo_name_reference === record.taxonID)) {
-      let insertedName = await prisma.names.create({
-        data: nameDataFromRecord(record, ingestId, {
-          id:
-            options && options.uuids ? options.uuids.names.shift() : undefined,
-        }),
+      let insertedName = nameDataFromRecord(record, ingestId, {
+        id: options && options.uuids ? options.uuids.names.shift() : uuidv4(),
       })
       insertedNames.push(insertedName)
     }
   }
+  await prisma.names.createMany({ data: insertedNames })
   return insertedNames
 }
 
