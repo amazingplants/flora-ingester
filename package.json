@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node dist",
+    "start": "NODE_ENV=production node dist --max-old-space-size=8192",
     "dev": "tsc && NODE_ENV=development node dist",
+    "build": "tsc",
     "test": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest",
     "test-watch": "tsc -w && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --watch "
   },

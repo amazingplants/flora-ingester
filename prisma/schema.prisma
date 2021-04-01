@@ -63,6 +63,7 @@ model names {
   @@index([genus], name: "names_genus_idx")
   @@index([scientific_name], name: "names_scientific_name_idx")
   @@index([wfo_data], name: "names_wfo_data_idx")
+  @@index([wfo_name_reference], name: "names_wfo_name_reference_idx")
 }
 
 enum name_status {

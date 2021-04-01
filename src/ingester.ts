@@ -1,4 +1,4 @@
-const BATCH_SIZE = 1000
+const BATCH_SIZE = 10000
 
 import {
   VALID_TAXONOMIC_STATUSES,
@@ -18,26 +18,31 @@ import fs from 'fs'
 import parse from 'csv-parse'
 import { v4 as uuidv4 } from 'uuid'
 
-const prisma = new PrismaClient({
-  log: [
-    {
-      emit: 'event',
-      level: 'query',
-    },
-    {
-      emit: 'stdout',
-      level: 'error',
-    },
-    {
-      emit: 'stdout',
-      level: 'warn',
-    },
-  ],
-})
+const prisma = new PrismaClient(
+  process.env.DEBUG
+    ? {
+        log: [
+          {
+            emit: 'event',
+            level: 'query',
+          },
+          {
+            emit: 'stdout',
+            level: 'error',
+          },
+          {
+            emit: 'stdout',
+            level: 'warn',
+          },
+        ],
+      }
+    : undefined,
+)
 
 if (process.env.DEBUG) {
   prisma.$on('query', (e) => {
-    console.log('Query: ' + e.query)
+    console.log('Query: ')
+    logDeep(e.query)
     console.log('Params: ' + e.params)
     console.log('Duration: ' + e.duration + 'ms')
   })
@@ -343,7 +348,7 @@ export async function ingest(
   console.info('Starting WFO ingest with ID ', ingestId)
   const totalRecords = await countLines(filePath)
 
-  //await prisma.$executeRaw(`BEGIN TRANSACTION;`)
+  await prisma.$executeRaw(`SET session_replication_role = 'replica';`)
 
   try {
     // Load the TSV file, parse it, batch the records and make an iterable
@@ -421,12 +426,10 @@ export async function ingest(
     }
     secondPassBar.update(totalRecords)
     secondPassBar.stop()
-
-    //await prisma.$executeRaw(`END TRANSACTION;`)
   } catch (err) {
-    //await prisma.$executeRaw(`ROLLBACK;`)
     console.error('ERROR:', err)
-    console.info(`Database transaction canceled`)
+  } finally {
+    await prisma.$executeRaw(`SET session_replication_role = 'origin';`)
   }
 
   if (options.disconnectDatabase) {
