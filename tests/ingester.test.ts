@@ -112,7 +112,7 @@ describe('with no existing data', () => {
     afterAll(closeDatabaseConnection)
   })
 
-  describe('with records that are composed of families and genera', () => {
+  describe('with records that are composed of families and genera, or are synonyms of these', () => {
     beforeEach(async () => {
       await resetDatabase()
       await ingest(

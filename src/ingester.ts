@@ -1,10 +1,11 @@
-const BATCH_SIZE = 10000
+const BATCH_SIZE = 1000
 
 import {
   VALID_TAXONOMIC_STATUSES,
   acceptedOrUncheckedStatusFilter,
   batcher,
   countLines,
+  irrelevantTaxonRanksFilter,
   logDeep,
   normalizedRecordStatus,
   normalizedStatus,
@@ -99,6 +100,13 @@ async function findAcceptedFloraTaxonRecursive(
     },
     include: { flora_taxa_names: { include: { flora_taxa: true } } },
   })
+  if (!name) {
+    console.error(
+      'Could not find accepted name when looking up recursive synonym:',
+      acceptedNameReference,
+    )
+    throw new Error('ERR_ACCEPTED_NAME_NOT_FOUND')
+  }
   let status = name.wfo_data['normalized_status']
   if (status === 'synonym') {
     depth++
@@ -234,6 +242,7 @@ async function insertSynonymFloraTaxaNames(
   filteredBatch,
   names,
   ingestId,
+  excludedRecords,
   options,
 ) {
   // Get the accepted flora_taxa by acceptedNameUsageID
@@ -266,8 +275,29 @@ async function insertSynonymFloraTaxaNames(
       ),
     )
 
-    // If the record's "accepted" name is actually another synonym, follow down the rabbit hole to find the correct flora taxon
     if (!floraTaxon) {
+      // If the record's "accepted" name is an irrelevant taxon (e.g. genus/family), delete the name
+      if (
+        excludedRecords.find(
+          (excludedRecord) =>
+            record.acceptedNameUsageID === excludedRecord.record.taxonID,
+        )
+      ) {
+        excludedRecords.push({ reason: 'SYNONYM_OF_IRRELEVANT_TAXON', record })
+        const nameToDelete = await prisma.names.findFirst({
+          where: {
+            wfo_name_reference: record.taxonID,
+          },
+        })
+        await prisma.names.delete({
+          where: {
+            id: nameToDelete.id,
+          },
+        })
+        continue
+      }
+
+      // If the record's "accepted" name is actually another synonym, follow down the rabbit hole to find the correct flora taxon
       floraTaxon = await findAcceptedFloraTaxonRecursive(
         record.acceptedNameUsageID,
       )
@@ -351,11 +381,13 @@ export async function ingest(
   await prisma.$executeRaw(`SET session_replication_role = 'replica';`)
 
   try {
+    const excludedRecords = []
+
     // Load the TSV file, parse it, batch the records and make an iterable
     const firstPassBatches = await loadClassification(filePath)
 
     console.info()
-    console.info('Ingesting accepted/unknown names')
+    console.info('Ingesting accepted/unknown names [1/2]')
 
     let firstPassProgress = 0
 
@@ -368,6 +400,13 @@ export async function ingest(
     for await (const batch of firstPassBatches) {
       // Fetch names joined to "current" flora_taxon_names by wfo-* ID
       let existingNames = await fetchNames(batch)
+
+      for (var excludedRecord of batch.filter(irrelevantTaxonRanksFilter)) {
+        excludedRecords.push({
+          reason: 'IRRELEVANT_TAXON_RANK',
+          record: excludedRecord,
+        })
+      }
 
       // For records relating to names that don't exist by wfo-* ID, insert the names
       let createdNames = await insertMissingNames(
@@ -399,7 +438,7 @@ export async function ingest(
     const secondPassBatches = await loadClassification(filePath)
 
     console.info()
-    console.info('Ingesting synonyms')
+    console.info('Ingesting synonyms [2/2]')
 
     let secondPassProgress = 0
 
@@ -418,6 +457,7 @@ export async function ingest(
         batch.filter(synonymStatusFilter).filter(relevantTaxonRanksFilter),
         names,
         ingestId,
+        excludedRecords,
         options,
       )
 
@@ -430,9 +470,8 @@ export async function ingest(
     console.error('ERROR:', err)
   } finally {
     await prisma.$executeRaw(`SET session_replication_role = 'origin';`)
-  }
-
-  if (options.disconnectDatabase) {
-    await prisma.$disconnect()
+    if (options.disconnectDatabase) {
+      await prisma.$disconnect()
+    }
   }
 }

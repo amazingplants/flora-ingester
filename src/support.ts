@@ -54,6 +54,10 @@ export function relevantTaxonRanksFilter(record) {
   return record.taxonRank !== 'family' && record.taxonRank !== 'genus'
 }
 
+export function irrelevantTaxonRanksFilter(record) {
+  return !relevantTaxonRanksFilter(record)
+}
+
 export function normalizedRecordStatus(record) {
   let status = record.taxonomicStatus.toLowerCase()
   // Sometimes WFO records are a synonym of themselves -- therefore, unknown
