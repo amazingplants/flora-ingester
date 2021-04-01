@@ -1,3 +1,5 @@
+const BATCH_SIZE = 1000
+
 import {
   VALID_TAXONOMIC_STATUSES,
   acceptedOrUncheckedStatusFilter,
@@ -14,11 +16,7 @@ import { PrismaClient } from '@prisma/client'
 import cliProgress from 'cli-progress'
 import fs from 'fs'
 import parse from 'csv-parse'
-import stream from 'stream'
-import util from 'util'
 import { v4 as uuidv4 } from 'uuid'
-
-const pipeline = util.promisify(stream.pipeline)
 
 const prisma = new PrismaClient({
   log: [
@@ -193,18 +191,15 @@ async function findOrInsertFloraTaxa(
       createdFloraTaxa.push(createdFloraTaxon)
     }
 
-    const name = names.find((n) => n.wfo_name_reference === record.taxonID)
-    let createdFloraTaxaName = {
-      id:
-        options && options.uuids
-          ? options.uuids.flora_taxa_names.shift()
-          : uuidv4(),
-      flora_taxon_id: (createdFloraTaxon || foundFloraTaxon).id,
-      name_id: name.id,
-      status: normalizedRecordStatus(record),
-      ingest_id: ingestId,
-    }
-    createdFloraTaxaNames.push(createdFloraTaxaName)
+    createdFloraTaxaNames.push(
+      generateFloraTaxaName(
+        foundFloraTaxon || createdFloraTaxon,
+        names,
+        record,
+        ingestId,
+        options,
+      ),
+    )
   }
 
   await prisma.flora_taxa.createMany({
@@ -216,27 +211,18 @@ async function findOrInsertFloraTaxa(
   })
 }
 
-// - Create a flora_taxa_name for each Accepted/Unchecked name
-async function insertFloraTaxaName(
-  floraTaxon,
-  names,
-  ingestId,
-  record,
-  options,
-) {
+function generateFloraTaxaName(floraTaxon, names, record, ingestId, options) {
   const name = names.find((n) => n.wfo_name_reference === record.taxonID)
-  let insertedFloraTaxonName = await prisma.flora_taxa_names.create({
-    data: {
-      id:
-        options && options.uuids
-          ? options.uuids.flora_taxa_names.shift()
-          : undefined,
-      flora_taxon_id: floraTaxon.id,
-      name_id: name.id,
-      status: normalizedRecordStatus(record),
-      ingest_id: ingestId,
-    },
-  })
+  return {
+    id:
+      options && options.uuids
+        ? options.uuids.flora_taxa_names.shift()
+        : uuidv4(),
+    flora_taxon_id: floraTaxon.id,
+    name_id: name.id,
+    status: normalizedRecordStatus(record),
+    ingest_id: ingestId,
+  }
 }
 
 async function insertSynonymFloraTaxaNames(
@@ -265,6 +251,8 @@ async function insertSynonymFloraTaxaNames(
     include: { flora_taxa_names: { include: { names: true } } },
   })
 
+  const createdFloraTaxaNames = []
+
   for (var record of filteredBatch) {
     // Insert the flora_taxa_names record
     let floraTaxon = acceptedFloraTaxa.find((t) =>
@@ -290,8 +278,13 @@ async function insertSynonymFloraTaxaNames(
       throw new Error('ACCEPTED_RECORD_NOT_FOUND')
     }
 
-    await insertFloraTaxaName(floraTaxon, names, ingestId, record, options)
+    createdFloraTaxaNames.push(
+      generateFloraTaxaName(floraTaxon, names, record, ingestId, options),
+    )
   }
+  await prisma.flora_taxa_names.createMany({
+    data: createdFloraTaxaNames,
+  })
 }
 
 async function loadClassification(filePath: string) {
@@ -303,10 +296,9 @@ async function loadClassification(filePath: string) {
     columns: true,
   })
 
-  //await pipeline(readStream, csvParser) <-- noworkee?
   readStream.pipe(csvParser)
 
-  return batcher(csvParser, 1000)
+  return batcher(csvParser, BATCH_SIZE)
 }
 
 // Sample record format:
