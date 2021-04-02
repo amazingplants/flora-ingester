@@ -22,7 +22,7 @@ export function logDeep(obj: any) {
   console.log(util.inspect(obj, { showHidden: false, depth: null }))
 }
 
-export async function logStats(ingestId: string) {
+export async function logStats(ingestId: string, results: any) {
   const insertedNamesCount = await prisma.names.count({
     where: {
       created_by_wfo_ingest_id: ingestId,
@@ -31,6 +31,26 @@ export async function logStats(ingestId: string) {
 
   console.info()
   console.info('Created', insertedNamesCount, 'names')
+  const irrelevantTaxonRanks = results.excludedRecords.filter(
+    (record) => record.reason === 'IRRELEVANT_TAXON_RANK',
+  )
+  if (irrelevantTaxonRanks.length > 0) {
+    console.info(
+      'Excluded',
+      irrelevantTaxonRanks.length,
+      'records with irrelevant taxon ranks (families, genera)',
+    )
+  }
+  const irrelevantSynonymsOfTaxonRanks = results.excludedRecords.filter(
+    (record) => record.reason === 'SYNONYM_OF_IRRELEVANT_TAXON',
+  )
+  if (irrelevantSynonymsOfTaxonRanks.length > 0) {
+    console.info(
+      'Excluded',
+      irrelevantSynonymsOfTaxonRanks.length,
+      'records synonyms of excluded records)',
+    )
+  }
 }
 
 export const VALID_TAXONOMIC_STATUSES = [

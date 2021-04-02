@@ -89,11 +89,38 @@ async function fetchNames(records: any[]) {
 
 async function findAcceptedFloraTaxonRecursive(
   acceptedNameReference,
+  originalRecord,
+  excludedRecords,
   depth = 0,
 ): Promise<any> {
   if (depth >= 3) {
     return null
   }
+
+  // If the record's "accepted" name is an irrelevant taxon (e.g. genus/family), delete the name
+  if (
+    excludedRecords.find(
+      (excludedRecord) =>
+        acceptedNameReference === excludedRecord.record.taxonID,
+    )
+  ) {
+    excludedRecords.push({
+      reason: 'SYNONYM_OF_IRRELEVANT_TAXON',
+      record: originalRecord,
+    })
+    const nameToDelete = await prisma.names.findFirst({
+      where: {
+        wfo_name_reference: originalRecord.taxonID,
+      },
+    })
+    await prisma.names.delete({
+      where: {
+        id: nameToDelete.id,
+      },
+    })
+    return // <- undefined
+  }
+
   let name = await prisma.names.findFirst({
     where: {
       wfo_name_reference: acceptedNameReference,
@@ -112,6 +139,8 @@ async function findAcceptedFloraTaxonRecursive(
     depth++
     return await findAcceptedFloraTaxonRecursive(
       name.wfo_data['accepted_name_reference'],
+      originalRecord,
+      excludedRecords,
       depth,
     )
   }
@@ -276,31 +305,17 @@ async function insertSynonymFloraTaxaNames(
     )
 
     if (!floraTaxon) {
-      // If the record's "accepted" name is an irrelevant taxon (e.g. genus/family), delete the name
-      if (
-        excludedRecords.find(
-          (excludedRecord) =>
-            record.acceptedNameUsageID === excludedRecord.record.taxonID,
-        )
-      ) {
-        excludedRecords.push({ reason: 'SYNONYM_OF_IRRELEVANT_TAXON', record })
-        const nameToDelete = await prisma.names.findFirst({
-          where: {
-            wfo_name_reference: record.taxonID,
-          },
-        })
-        await prisma.names.delete({
-          where: {
-            id: nameToDelete.id,
-          },
-        })
-        continue
-      }
-
       // If the record's "accepted" name is actually another synonym, follow down the rabbit hole to find the correct flora taxon
       floraTaxon = await findAcceptedFloraTaxonRecursive(
         record.acceptedNameUsageID,
+        record,
+        excludedRecords,
       )
+      // If the recursive finder returned no value, it means it has found a recoverable issue with the upstream accepted name
+      // (maybe it's a genus?), so move onto the next record without throwing
+      if (typeof floraTaxon === 'undefined') {
+        continue
+      }
     }
 
     if (!floraTaxon) {
@@ -466,6 +481,11 @@ export async function ingest(
     }
     secondPassBar.update(totalRecords)
     secondPassBar.stop()
+
+    return {
+      success: true,
+      excludedRecords,
+    }
   } catch (err) {
     console.error('ERROR:', err)
   } finally {

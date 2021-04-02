@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 const ingestId = uuidv4()
 
 ;(async () => {
-  await ingest(ingestId, './local-data/classification.txt')
-  await logStats(ingestId)
+  const results = await ingest(ingestId, './local-data/classification.txt')
+  await logStats(ingestId, results)
   process.exit()
 })()
