@@ -14,5 +14,5 @@ module.exports = {
     '^.+\\.ts?$': 'ts-jest',
   },
 
-  setupFilesAfterEnv: ['./tests/setup.ts'],
+  setupFilesAfterEnv: ['./tests/setup.js'],
 }
