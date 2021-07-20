@@ -18,12 +18,8 @@ export async function* batcher(iterable, batchSize: number = 5) {
   }
 }
 
-export function logDeep(obj: any) {
-  console.log(util.inspect(obj, { showHidden: false, depth: null }))
-}
-
 export async function logStats(ingestId: string, results: any) {
-  const insertedNamesCount = await prisma.names.count({
+  const insertedNamesCount = await prisma.flora_names.count({
     where: {
       created_by_wfo_ingest_id: ingestId,
     },

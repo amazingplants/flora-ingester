@@ -6,12 +6,13 @@ import {
   batcher,
   countLines,
   irrelevantTaxonRanksFilter,
-  logDeep,
   normalizedRecordStatus,
   normalizedStatus,
   relevantTaxonRanksFilter,
   synonymStatusFilter,
 } from './support'
+
+import { logDeep } from '../common/utils'
 
 import { PrismaClient } from '@prisma/client'
 import cliProgress from 'cli-progress'
@@ -71,7 +72,7 @@ function nameDataFromRecord(record: any, ingestId: string, options?: any) {
 }
 
 async function fetchNames(records: any[]) {
-  return await prisma.names.findMany({
+  return await prisma.flora_names.findMany({
     where: {
       wfo_name_reference: {
         in: records.map((record) => record.taxonID),
@@ -108,12 +109,12 @@ async function findAcceptedFloraTaxonRecursive(
       reason: 'SYNONYM_OF_IRRELEVANT_TAXON',
       record: originalRecord,
     })
-    const nameToDelete = await prisma.names.findFirst({
+    const nameToDelete = await prisma.flora_names.findFirst({
       where: {
         wfo_name_reference: originalRecord.taxonID,
       },
     })
-    await prisma.names.delete({
+    await prisma.flora_names.delete({
       where: {
         id: nameToDelete.id,
       },
@@ -121,7 +122,7 @@ async function findAcceptedFloraTaxonRecursive(
     return // <- undefined
   }
 
-  let name = await prisma.names.findFirst({
+  let name = await prisma.flora_names.findFirst({
     where: {
       wfo_name_reference: acceptedNameReference,
     },
@@ -180,7 +181,7 @@ async function insertMissingNames(
       insertedNames.push(insertedName)
     }
   }
-  await prisma.names.createMany({ data: insertedNames })
+  await prisma.flora_names.createMany({ data: insertedNames })
   return insertedNames
 }
 
@@ -188,7 +189,7 @@ async function insertMissingNames(
 // - If the flora_taxon doesn't exist, create it
 async function findOrInsertFloraTaxa(
   filteredBatch,
-  names,
+  floraNames,
   ingestId: string,
   options: any,
 ) {
@@ -200,7 +201,7 @@ async function findOrInsertFloraTaxa(
             in: ['accepted', 'unknown'],
           },
           ingest_id: process.env.ACTIVE_INGEST_ID,
-          names: {
+          flora_names: {
             wfo_name_reference: {
               in: filteredBatch.map((r) => r.taxonID),
             },
@@ -208,7 +209,7 @@ async function findOrInsertFloraTaxa(
         },
       },
     },
-    include: { flora_taxa_names: { include: { names: true } } },
+    include: { flora_taxa_names: { include: { flora_names: true } } },
   })
 
   const createdFloraTaxa = []
@@ -217,7 +218,7 @@ async function findOrInsertFloraTaxa(
   for (const record of filteredBatch) {
     const foundFloraTaxon = floraTaxa.find((t) =>
       t.flora_taxa_names.find(
-        (tn) => tn.names.wfo_name_reference === record.taxonID,
+        (tn) => tn.flora_names.wfo_name_reference === record.taxonID,
       ),
     )
 
@@ -236,7 +237,7 @@ async function findOrInsertFloraTaxa(
     createdFloraTaxaNames.push(
       generateFloraTaxaName(
         foundFloraTaxon || createdFloraTaxon,
-        names,
+        floraNames,
         record,
         ingestId,
         options,
@@ -253,8 +254,14 @@ async function findOrInsertFloraTaxa(
   })
 }
 
-function generateFloraTaxaName(floraTaxon, names, record, ingestId, options) {
-  const name = names.find((n) => n.wfo_name_reference === record.taxonID)
+function generateFloraTaxaName(
+  floraTaxon,
+  floraNames,
+  record,
+  ingestId,
+  options,
+) {
+  const name = floraNames.find((n) => n.wfo_name_reference === record.taxonID)
   return {
     id:
       options && options.uuids
@@ -269,7 +276,7 @@ function generateFloraTaxaName(floraTaxon, names, record, ingestId, options) {
 
 async function insertSynonymFloraTaxaNames(
   filteredBatch,
-  names,
+  floraNames,
   ingestId,
   excludedRecords,
   options,
@@ -283,7 +290,7 @@ async function insertSynonymFloraTaxaNames(
             in: ['accepted', 'unknown'],
           },
           ingest_id: ingestId,
-          names: {
+          flora_names: {
             wfo_name_reference: {
               in: filteredBatch.map((r) => r.acceptedNameUsageID),
             },
@@ -291,7 +298,7 @@ async function insertSynonymFloraTaxaNames(
         },
       },
     },
-    include: { flora_taxa_names: { include: { names: true } } },
+    include: { flora_taxa_names: { include: { flora_names: true } } },
   })
 
   const createdFloraTaxaNames = []
@@ -300,7 +307,8 @@ async function insertSynonymFloraTaxaNames(
     // Insert the flora_taxa_names record
     let floraTaxon = acceptedFloraTaxa.find((t) =>
       t.flora_taxa_names.find(
-        (tn) => tn.names.wfo_name_reference === record.acceptedNameUsageID,
+        (tn) =>
+          tn.flora_names.wfo_name_reference === record.acceptedNameUsageID,
       ),
     )
 
@@ -329,7 +337,7 @@ async function insertSynonymFloraTaxaNames(
     }
 
     createdFloraTaxaNames.push(
-      generateFloraTaxaName(floraTaxon, names, record, ingestId, options),
+      generateFloraTaxaName(floraTaxon, floraNames, record, ingestId, options),
     )
   }
   await prisma.flora_taxa_names.createMany({
@@ -379,7 +387,7 @@ export async function ingest(
   filePath: string,
   options?: {
     uuids?: {
-      names: string[]
+      flora_names: string[]
       flora_taxa: string[]
       flora_taxa_names: string[]
     }
@@ -466,11 +474,11 @@ export async function ingest(
     // For eacn Synonym, find the name record by wfo-* ID, and look up the accepted flora_taxon by acceptedNameUsageID,
     // then insert the flora_taxa_names record
     for await (const batch of secondPassBatches) {
-      let names = await fetchNames(batch)
+      let floraNames = await fetchNames(batch)
 
       await insertSynonymFloraTaxaNames(
         batch.filter(synonymStatusFilter).filter(relevantTaxonRanksFilter),
-        names,
+        floraNames,
         ingestId,
         excludedRecords,
         options,

@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["createMany"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -9,7 +8,7 @@ datasource db {
 }
 
 model flora_taxa {
-  id                       String             @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  id                       String             @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
   created_by_wfo_ingest_id String             @db.Uuid
   flora_taxa_names         flora_taxa_names[]
 
@@ -17,20 +16,20 @@ model flora_taxa {
 }
 
 model flora_taxa_names {
-  flora_taxon_id String      @db.Uuid
-  name_id        String      @db.Uuid
-  status         name_status
-  id             String      @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  ingest_id      String      @db.Uuid
-  flora_taxa     flora_taxa  @relation(fields: [flora_taxon_id], references: [id])
-  names          names       @relation(fields: [name_id], references: [id])
+  flora_taxon_id String            @db.Uuid
+  flora_name_id  String            @db.Uuid
+  status         flora_name_status
+  id             String            @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
+  ingest_id      String            @db.Uuid
+  flora_taxa     flora_taxa        @relation(fields: [flora_taxon_id], references: [id])
+  flora_names    flora_names       @relation(fields: [flora_name_id], references: [id])
 
-  @@unique([flora_taxon_id, name_id, ingest_id], name: "flora_taxa_names_flora_taxon_id_name_id_idx")
+  @@unique([flora_taxon_id, flora_name_id, ingest_id], name: "flora_taxa_names_flora_taxon_id_flora_name_id_idx")
   @@index([status], name: "flora_taxa_names_status_idx")
 }
 
-model names {
-  id                       String             @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+model flora_names {
+  id                       String             @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
   scientific_name          String
   name_according_to        String?
   name_published_in        String?
@@ -58,16 +57,56 @@ model names {
   wfo_data                 Json?
   flora_taxa_names         flora_taxa_names[]
 
-  @@index([base_id], name: "names_base_id_idx")
-  @@index([family], name: "names_family_idx")
-  @@index([genus], name: "names_genus_idx")
-  @@index([scientific_name], name: "names_scientific_name_idx")
-  @@index([wfo_data], name: "names_wfo_data_idx")
-  @@index([wfo_name_reference], name: "names_wfo_name_reference_idx")
+  @@index([family], name: "flora_names_family_idx")
+  @@index([genus], name: "flora_names_genus_idx")
+  @@index([scientific_name], name: "flora_names_scientific_name_idx")
+  @@index([wfo_data], name: "flora_names_wfo_data_idx")
+  @@index([wfo_name_reference], name: "flora_names_wfo_name_reference_idx")
 }
 
-enum name_status {
+model red_list_data {
+  id               String            @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
+  scientific_name  String
+  flora_taxon_id   String?           @db.Uuid
+  category         red_list_category
+  year_assessed    Int
+  red_list_version String
+  current          Boolean           @default(false)
+  ingested_at      DateTime          @db.Timestamptz(6)
+  ingest_id        String            @db.Uuid
+
+  @@index([category], name: "red_list_data_category_idx")
+  @@index([current], name: "red_list_data_current_idx")
+  @@index([flora_taxon_id], name: "red_list_data_flora_taxon_id_idx")
+  @@index([year_assessed], name: "red_list_data_year_assessed_idx")
+}
+
+model powo_raw_data {
+  id          String  @id
+  author      String?
+  accepted    Boolean
+  family      String
+  name        String
+  rank        String
+  accepted_id String?
+  images      Json?
+
+  @@index([accepted_id], name: "powo_raw_data_accepted_id_idx")
+}
+
+enum flora_name_status {
   accepted
   synonym
   unknown
+}
+
+enum red_list_category {
+  DD
+  LC
+  NT
+  VU
+  EN
+  CR
+  EW
+  EX
 }
