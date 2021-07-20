@@ -268,7 +268,7 @@ function generateFloraTaxaName(
         ? options.uuids.flora_taxa_names.shift()
         : uuidv4(),
     flora_taxon_id: floraTaxon.id,
-    name_id: name.id,
+    flora_name_id: name.id,
     status: normalizedRecordStatus(record),
     ingest_id: ingestId,
   }
