@@ -7,10 +7,14 @@ import {
 } from './support'
 
 import fixtures from './fixtures/index'
-import { ingest } from '../dist/ingester'
+import { ingest } from '../dist/wfo/ingest'
 import uuidGenerator from './fixtures/uuids'
 
-let dbSnapshot: { flora_taxa: any[]; flora_taxa_names: any[]; names: any[] }
+let dbSnapshot: {
+  flora_taxa: any[]
+  flora_taxa_names: any[]
+  flora_names: any[]
+}
 
 describe('with no existing data', () => {
   describe('and some new records', () => {
@@ -27,9 +31,9 @@ describe('with no existing data', () => {
       expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n3.flora_taxa)
     })
 
-    test('creates names', () => {
-      expect(dbSnapshot.names.length).toBe(3)
-      expect(dbSnapshot.names).toMatchObject(fixtures.n3.names)
+    test('creates flora_names', () => {
+      expect(dbSnapshot.flora_names.length).toBe(3)
+      expect(dbSnapshot.flora_names).toMatchObject(fixtures.n3.flora_names)
     })
 
     test('creates flora_taxa_names', () => {
@@ -62,9 +66,11 @@ describe('with no existing data', () => {
       )
     })
 
-    test('creates names', () => {
-      expect(dbSnapshot.names.length).toBe(1)
-      expect(dbSnapshot.names).toMatchObject(fixtures.selfSynonym.names)
+    test('creates flora_names', () => {
+      expect(dbSnapshot.flora_names.length).toBe(1)
+      expect(dbSnapshot.flora_names).toMatchObject(
+        fixtures.selfSynonym.flora_names,
+      )
     })
 
     test('creates flora_taxa_names', () => {
@@ -97,9 +103,11 @@ describe('with no existing data', () => {
       )
     })
 
-    test('creates names', () => {
-      expect(dbSnapshot.names.length).toBe(3)
-      expect(dbSnapshot.names).toMatchObject(fixtures.recursiveSynonym.names)
+    test('creates flora_names', () => {
+      expect(dbSnapshot.flora_names.length).toBe(3)
+      expect(dbSnapshot.flora_names).toMatchObject(
+        fixtures.recursiveSynonym.flora_names,
+      )
     })
 
     test('creates flora_taxa_names', () => {
@@ -129,8 +137,8 @@ describe('with no existing data', () => {
       expect(dbSnapshot.flora_taxa.length).toBe(0)
     })
 
-    test('does not create names', () => {
-      expect(dbSnapshot.names.length).toBe(0)
+    test('does not create flora_names', () => {
+      expect(dbSnapshot.flora_names.length).toBe(0)
     })
 
     test('does not create flora_taxa_names', () => {
@@ -169,9 +177,9 @@ describe('with existing data', () => {
       expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n6.flora_taxa)
     })
 
-    test('creates additional names', () => {
-      expect(dbSnapshot.names.length).toBe(6)
-      expect(dbSnapshot.names).toMatchObject(fixtures.n6.names)
+    test('creates additional flora_names', () => {
+      expect(dbSnapshot.flora_names.length).toBe(6)
+      expect(dbSnapshot.flora_names).toMatchObject(fixtures.n6.flora_names)
     })
 
     test('creates additional flora_taxa_names', () => {

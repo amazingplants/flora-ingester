@@ -10,26 +10,26 @@ export const flora_taxa_names = [
     id: 'e8d2e005-5e8c-4a62-b4d2-e0c62b6264af',
     flora_taxon_id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: '2080d105-6861-4d41-987c-59ee02041f17',
+    flora_name_id: '2080d105-6861-4d41-987c-59ee02041f17',
     status: 'accepted',
   },
   {
     id: 'bc8afe1c-5646-4749-ba4b-7370c46ad0e3',
     flora_taxon_id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: '1e972124-a3e9-4011-be8e-4682fd6551d6',
+    flora_name_id: '1e972124-a3e9-4011-be8e-4682fd6551d6',
     status: 'synonym',
   },
   {
     id: 'dfdabf90-7274-468f-94b9-8302c47e7b98',
     flora_taxon_id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: 'f33b5dfc-4d4a-435d-a541-7afa7160db66',
+    flora_name_id: 'f33b5dfc-4d4a-435d-a541-7afa7160db66',
     status: 'synonym',
   },
 ]
 
-export const names = [
+export const flora_names = [
   {
     id: '2080d105-6861-4d41-987c-59ee02041f17',
     scientific_name: 'Iochroma australe',

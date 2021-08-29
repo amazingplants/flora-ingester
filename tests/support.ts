@@ -9,14 +9,14 @@ export async function createDbSnapshot() {
   return {
     flora_taxa: await prisma.flora_taxa.findMany(),
     flora_taxa_names: await prisma.flora_taxa_names.findMany(),
-    names: await prisma.names.findMany(),
+    flora_names: await prisma.flora_names.findMany(),
   }
 }
 
 export async function resetDatabase() {
   await prisma.flora_taxa_names.deleteMany({ where: {} })
   await prisma.flora_taxa.deleteMany({ where: {} })
-  await prisma.names.deleteMany({ where: {} })
+  await prisma.flora_names.deleteMany({ where: {} })
 }
 
 export async function closeDatabaseConnection() {

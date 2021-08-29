@@ -3,7 +3,7 @@ export default function () {
   return {
     flora_taxa: [...flora_taxa],
     flora_taxa_names: [...flora_taxa_names],
-    names: [...names],
+    flora_names: [...flora_names],
   }
 }
 
@@ -113,7 +113,7 @@ const flora_taxa_names = [
   '9a988a84-f8b1-4c5a-8a07-cbd590ba4043',
 ]
 
-const names = [
+const flora_names = [
   '2080d105-6861-4d41-987c-59ee02041f17',
   '1e972124-a3e9-4011-be8e-4682fd6551d6',
   'f33b5dfc-4d4a-435d-a541-7afa7160db66',

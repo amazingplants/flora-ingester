@@ -176,7 +176,10 @@ async function insertMissingNames(
     // If a name doesn't exist already, linked to this wfo-* ID, create it
     if (!names.find((n) => n.wfo_name_reference === record.taxonID)) {
       let insertedName = nameDataFromRecord(record, ingestId, {
-        id: options && options.uuids ? options.uuids.names.shift() : uuidv4(),
+        id:
+          options && options.uuids
+            ? options.uuids.flora_names.shift()
+            : uuidv4(),
       })
       insertedNames.push(insertedName)
     }

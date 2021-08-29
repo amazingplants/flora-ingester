@@ -10,12 +10,12 @@ export const flora_taxa_names = [
     id: 'e8d2e005-5e8c-4a62-b4d2-e0c62b6264af',
     flora_taxon_id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: '2080d105-6861-4d41-987c-59ee02041f17',
+    flora_name_id: '2080d105-6861-4d41-987c-59ee02041f17',
     status: 'unknown',
   },
 ]
 
-export const names = [
+export const flora_names = [
   {
     id: '2080d105-6861-4d41-987c-59ee02041f17',
     scientific_name: 'Camellia grandibracteata',

@@ -1,11 +1,14 @@
 {
-  "flora_taxa": [{
+  "flora_taxa": [
+    {
       "created_by_wfo_ingest_id": "3d7ce295-0fc3-4c35-ab71-f70ffd221f92",
       "id": "371262d1-fa13-4928-bbf1-b8138c529928"
-    },{
+    },
+    {
       "created_by_wfo_ingest_id": "3d7ce295-0fc3-4c35-ab71-f70ffd221f92",
       "id": "c6c97dc8-d0d8-449d-8d12-a2af86d5966a"
-    }],
+    }
+  ],
   "flora_taxa_names": [{}],
-  "names": [{}]
+  "flora_names": [{}]
 }

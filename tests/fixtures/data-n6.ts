@@ -22,47 +22,47 @@ export const flora_taxa_names = [
     id: 'e8d2e005-5e8c-4a62-b4d2-e0c62b6264af',
     flora_taxon_id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
     ingest_id: 'beffa460-b7c3-45c6-81f2-be6b3087025b',
-    name_id: '1e972124-a3e9-4011-be8e-4682fd6551d6',
+    flora_name_id: '1e972124-a3e9-4011-be8e-4682fd6551d6',
     status: 'accepted',
   },
   {
     id: 'bc8afe1c-5646-4749-ba4b-7370c46ad0e3',
     flora_taxon_id: '0234d7d2-ef20-4170-8722-4231b15acf51',
     ingest_id: 'beffa460-b7c3-45c6-81f2-be6b3087025b',
-    name_id: 'f33b5dfc-4d4a-435d-a541-7afa7160db66',
+    flora_name_id: 'f33b5dfc-4d4a-435d-a541-7afa7160db66',
     status: 'unknown',
   },
   {
     id: 'dfdabf90-7274-468f-94b9-8302c47e7b98',
     flora_taxon_id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
     ingest_id: 'beffa460-b7c3-45c6-81f2-be6b3087025b',
-    name_id: '2080d105-6861-4d41-987c-59ee02041f17',
+    flora_name_id: '2080d105-6861-4d41-987c-59ee02041f17',
     status: 'synonym',
   },
   {
     id: '48a71a7a-c19f-4832-bf28-03111835ca93',
     flora_taxon_id: 'e97fe688-f66c-4393-b49a-1c148feae057',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: 'da374ec7-06dc-40d6-9191-8b1f6b042b7c',
+    flora_name_id: 'da374ec7-06dc-40d6-9191-8b1f6b042b7c',
     status: 'unknown',
   },
   {
     id: '71120958-c32f-482b-b127-de2b1e2bcbae',
     flora_taxon_id: 'e144de8f-91d7-4731-b8d9-a44192d2eae0',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: '19418d23-3d9b-4832-a8a9-2b32158d2819',
+    flora_name_id: '19418d23-3d9b-4832-a8a9-2b32158d2819',
     status: 'accepted',
   },
   {
     id: 'e0684c65-a79f-433e-99e6-607db1a01cb1',
     flora_taxon_id: 'e144de8f-91d7-4731-b8d9-a44192d2eae0',
     ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
-    name_id: '96787e08-6bc0-4496-815d-b4d949a03995',
+    flora_name_id: '96787e08-6bc0-4496-815d-b4d949a03995',
     status: 'synonym',
   },
 ]
 
-export const names = [
+export const flora_names = [
   {
     id: '2080d105-6861-4d41-987c-59ee02041f17',
     scientific_name: 'Cirsium caput-medusae',
