@@ -1,10 +1,17 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model flora_ingests {
+  id         String      @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
+  type       ingest_type
+  created_at DateTime    @db.Timestamptz(6)
 }
 
 model flora_taxa {
@@ -16,16 +23,17 @@ model flora_taxa {
 }
 
 model flora_taxa_names {
+  id             String            @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
   flora_taxon_id String            @db.Uuid
   flora_name_id  String            @db.Uuid
   status         flora_name_status
-  id             String            @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
   ingest_id      String            @db.Uuid
   flora_taxa     flora_taxa        @relation(fields: [flora_taxon_id], references: [id])
   flora_names    flora_names       @relation(fields: [flora_name_id], references: [id])
 
   @@unique([flora_taxon_id, flora_name_id, ingest_id], name: "flora_taxa_names_flora_taxon_id_flora_name_id_idx")
   @@index([status], name: "flora_taxa_names_status_idx")
+  @@index([ingest_id], name: "flora_taxa_names_ingest_id_idx")
 }
 
 model flora_names {
@@ -92,6 +100,38 @@ model powo_raw_data {
   images      Json?
 
   @@index([accepted_id], name: "powo_raw_data_accepted_id_idx")
+}
+
+model wfo_raw_data {
+  taxonID                  String  @id
+  scientificNameID         String
+  scientificName           String
+  taxonRank                String
+  parentNameUsageID        String
+  scientificNameAuthorship String
+  family                   String
+  genus                    String
+  specificEpithet          String
+  infraspecificEpithet     String
+  verbatimTaxonRank        String
+  nomenclaturalStatus      String
+  namePublishedIn          String
+  taxonomicStatus          String
+  acceptedNameUsageID      String
+  nameAccordingToID        String
+  created                  String
+  modified                 String
+  references               String
+  ingest_id                String
+  first_pass_processed                Boolean @default(false)
+  second_pass_processed Boolean @default(false)
+
+  @@index([taxonID], name: "wfo_raw_data_taxonID_idx")
+}
+
+enum ingest_type {
+  wfo
+  powo
 }
 
 enum flora_name_status {

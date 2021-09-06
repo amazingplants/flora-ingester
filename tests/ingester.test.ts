@@ -7,7 +7,7 @@ import {
 } from './support'
 
 import fixtures from './fixtures/index'
-import { ingest } from '../dist/wfo/ingest'
+import { fetchAndIngest } from '../dist/wfo/ingest'
 import uuidGenerator from './fixtures/uuids'
 
 let dbSnapshot: {
@@ -20,9 +20,13 @@ describe('with no existing data', () => {
   describe('and some new records', () => {
     beforeEach(async () => {
       await resetDatabase()
-      await ingest(currentIngestId, './tests/fixtures/classification-n3.txt', {
-        uuids: uuidGenerator(),
-      })
+      await fetchAndIngest(
+        currentIngestId,
+        './tests/fixtures/classification-n3.txt',
+        {
+          uuids: uuidGenerator(),
+        },
+      )
       dbSnapshot = await createDbSnapshot()
     })
 
@@ -49,7 +53,7 @@ describe('with no existing data', () => {
   describe('with a record that is a synonym of itself', () => {
     beforeEach(async () => {
       await resetDatabase()
-      await ingest(
+      await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-self-synonym.txt',
         {
@@ -86,7 +90,7 @@ describe('with no existing data', () => {
   describe('with a record that is a synonym of another synonym', () => {
     beforeEach(async () => {
       await resetDatabase()
-      await ingest(
+      await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-recursive-synonym.txt',
         {
@@ -123,7 +127,7 @@ describe('with no existing data', () => {
   describe('with records that are composed of families and genera, or are synonyms of these', () => {
     beforeEach(async () => {
       await resetDatabase()
-      await ingest(
+      await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-irrelevant.txt',
         {
@@ -155,14 +159,18 @@ describe('with existing data', () => {
   beforeEach(async () => {
     await resetDatabase()
     uuids = uuidGenerator()
-    await ingest(previousIngestId, './tests/fixtures/classification-n3.txt', {
-      uuids,
-    })
+    await fetchAndIngest(
+      previousIngestId,
+      './tests/fixtures/classification-n3.txt',
+      {
+        uuids,
+      },
+    )
   })
 
   describe('and some new records', () => {
     beforeEach(async () => {
-      await ingest(
+      await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-n3+3.txt',
         {

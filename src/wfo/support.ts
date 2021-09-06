@@ -58,6 +58,8 @@ export const VALID_TAXONOMIC_STATUSES = [
   'ambiguous',
 ]
 
+export const IRRELEVANT_TAXON_RANKS = ['genus', 'family']
+
 export function acceptedOrUncheckedStatusFilter(record) {
   return ['accepted', 'unknown'].indexOf(normalizedRecordStatus(record)) > -1
 }
@@ -67,7 +69,7 @@ export function synonymStatusFilter(record) {
 }
 
 export function relevantTaxonRanksFilter(record) {
-  return record.taxonRank !== 'family' && record.taxonRank !== 'genus'
+  return IRRELEVANT_TAXON_RANKS.indexOf(record.taxonRank) === -1
 }
 
 export function irrelevantTaxonRanksFilter(record) {

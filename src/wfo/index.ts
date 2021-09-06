@@ -1,14 +1,42 @@
 require('custom-env').env()
 
 import fs from 'fs'
+import { PrismaClient } from '@prisma/client'
 import * as wfo from './ingest'
 import { logStats } from './support'
-import { v4 as uuidv4 } from 'uuid'
 
-const ingestId = uuidv4()
+const prisma = new PrismaClient(
+  process.env.DEBUG
+    ? {
+        log: [
+          {
+            emit: 'event',
+            level: 'query',
+          },
+          {
+            emit: 'stdout',
+            level: 'error',
+          },
+          {
+            emit: 'stdout',
+            level: 'warn',
+          },
+        ],
+      }
+    : undefined,
+)
 
 ;(async () => {
-  const results = await wfo.ingest(ingestId, './local-data/classification.txt')
-  await logStats(ingestId, results)
+  const ingest = await prisma.flora_ingests.findFirst({
+    where: {
+      type: 'wfo',
+    },
+    orderBy: {
+      created_at: 'desc',
+    },
+  })
+
+  const results = await wfo.ingest(ingest.id)
+  await logStats(ingest.id, results)
   process.exit()
 })()
