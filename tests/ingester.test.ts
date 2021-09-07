@@ -1,8 +1,10 @@
 import {
   closeDatabaseConnection,
   createDbSnapshot,
+  createIngest,
   currentIngestId,
   previousIngestId,
+  oldIngestId,
   resetDatabase,
 } from './support'
 
@@ -20,6 +22,7 @@ describe('with no existing data', () => {
   describe('and some new records', () => {
     beforeEach(async () => {
       await resetDatabase()
+      await createIngest(currentIngestId)
       await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-n3.txt',
@@ -53,6 +56,7 @@ describe('with no existing data', () => {
   describe('with a record that is a synonym of itself', () => {
     beforeEach(async () => {
       await resetDatabase()
+      await createIngest(currentIngestId)
       await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-self-synonym.txt',
@@ -90,6 +94,7 @@ describe('with no existing data', () => {
   describe('with a record that is a synonym of another synonym', () => {
     beforeEach(async () => {
       await resetDatabase()
+      await createIngest(currentIngestId)
       await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-recursive-synonym.txt',
@@ -127,6 +132,7 @@ describe('with no existing data', () => {
   describe('with records that are composed of families and genera, or are synonyms of these', () => {
     beforeEach(async () => {
       await resetDatabase()
+      await createIngest(currentIngestId)
       await fetchAndIngest(
         currentIngestId,
         './tests/fixtures/classification-irrelevant.txt',
@@ -159,6 +165,9 @@ describe('with existing data', () => {
   beforeEach(async () => {
     await resetDatabase()
     uuids = uuidGenerator()
+
+    await createIngest(previousIngestId, true)
+
     await fetchAndIngest(
       previousIngestId,
       './tests/fixtures/classification-n3.txt',
@@ -170,9 +179,10 @@ describe('with existing data', () => {
 
   describe('and some new records', () => {
     beforeEach(async () => {
+      await createIngest(currentIngestId)
       await fetchAndIngest(
         currentIngestId,
-        './tests/fixtures/classification-n3+3.txt',
+        './tests/fixtures/classification-n3+4.txt',
         {
           uuids,
         },
@@ -182,19 +192,77 @@ describe('with existing data', () => {
 
     test('creates additional flora_taxa', () => {
       expect(dbSnapshot.flora_taxa.length).toBe(4)
-      expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n6.flora_taxa)
+      expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n7.flora_taxa)
     })
 
     test('creates additional flora_names', () => {
       expect(dbSnapshot.flora_names.length).toBe(6)
-      expect(dbSnapshot.flora_names).toMatchObject(fixtures.n6.flora_names)
+      expect(dbSnapshot.flora_names).toMatchObject(fixtures.n7.flora_names)
     })
 
     test('creates additional flora_taxa_names', () => {
-      expect(dbSnapshot.flora_taxa_names.length).toBe(6)
+      expect(dbSnapshot.flora_taxa_names.length).toBe(9)
       expect(dbSnapshot.flora_taxa_names).toMatchObject(
-        fixtures.n6.flora_taxa_names,
+        fixtures.n7.flora_taxa_names,
       )
+    })
+
+    test('does not duplicate existing flora_names', () => {
+      expect(
+        dbSnapshot.flora_names.filter(
+          (n) => n.scientific_name === 'Cirsium spinosissimum',
+        ).length,
+      ).toBe(1)
+    })
+
+    afterAll(closeDatabaseConnection)
+  })
+})
+
+describe('with old data', () => {
+  let uuids
+
+  beforeEach(async () => {
+    await resetDatabase()
+    uuids = uuidGenerator()
+
+    await createIngest(oldIngestId, false)
+
+    await fetchAndIngest(
+      oldIngestId,
+      './tests/fixtures/classification-n1.txt',
+      {
+        uuids,
+      },
+    )
+
+    await createIngest(previousIngestId, true)
+
+    await fetchAndIngest(
+      previousIngestId,
+      './tests/fixtures/classification-n3.txt',
+      {
+        uuids,
+      },
+    )
+  })
+
+  describe('and some new records', () => {
+    beforeEach(async () => {
+      await createIngest(currentIngestId)
+      await fetchAndIngest(
+        currentIngestId,
+        './tests/fixtures/classification-n3+4.txt',
+        {
+          uuids,
+        },
+      )
+      dbSnapshot = await createDbSnapshot()
+    })
+
+    test('ignores old flora_taxa', () => {
+      expect(dbSnapshot.flora_taxa.length).toBe(5)
+      expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n8.flora_taxa)
     })
 
     afterAll(closeDatabaseConnection)

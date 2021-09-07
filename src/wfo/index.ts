@@ -1,30 +1,11 @@
 require('custom-env').env()
 
-import fs from 'fs'
 import { PrismaClient } from '@prisma/client'
 import * as wfo from './ingest'
 import { logStats } from './support'
+import { prismaOptions } from '../common/utils'
 
-const prisma = new PrismaClient(
-  process.env.DEBUG
-    ? {
-        log: [
-          {
-            emit: 'event',
-            level: 'query',
-          },
-          {
-            emit: 'stdout',
-            level: 'error',
-          },
-          {
-            emit: 'stdout',
-            level: 'warn',
-          },
-        ],
-      }
-    : undefined,
-)
+const prisma = new PrismaClient(prismaOptions)
 
 ;(async () => {
   const ingest = await prisma.flora_ingests.findFirst({

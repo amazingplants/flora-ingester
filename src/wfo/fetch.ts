@@ -34,8 +34,6 @@ if (process.env.DEBUG) {
 }
 
 ;(async () => {
-  await prisma.$executeRaw(`TRUNCATE TABLE app.wfo_raw_data;`)
-
   const ingest = await prisma.flora_ingests.create({
     data: {
       type: 'wfo',

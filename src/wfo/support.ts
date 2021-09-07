@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import util from 'util'
-const prisma = new PrismaClient({ log: [/*'query',*/ `warn`, `error`] })
+import { prismaOptions } from '../common/utils'
+const prisma = new PrismaClient(prismaOptions)
 
 export async function* batcher(iterable, batchSize: number = 5) {
   let batch = []

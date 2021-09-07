@@ -1,0 +1,2 @@
+taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-0000064637	982970-1	Parasenecio hastatus	SPECIES	wfo-4000028150	(L.) H.Koyama	Asteraceae	Parasenecio	hastatus				52 1995	Accepted			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-21586

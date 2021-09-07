@@ -21,36 +21,18 @@ import cliProgress from 'cli-progress'
 import fs from 'fs'
 import parse from 'csv-parse'
 import { v4 as uuidv4 } from 'uuid'
+import { prismaOptions } from '../common/utils'
 
-const prisma = new PrismaClient(
-  process.env.DEBUG
-    ? {
-        log: [
-          {
-            emit: 'event',
-            level: 'query',
-          },
-          {
-            emit: 'stdout',
-            level: 'error',
-          },
-          {
-            emit: 'stdout',
-            level: 'warn',
-          },
-        ],
-      }
-    : undefined,
-)
+const prisma = new PrismaClient(prismaOptions)
 
-if (process.env.DEBUG) {
+/*if (process.env.DEBUG) {
   prisma.$on('query', (e) => {
     console.log('Query: ')
     logDeep(e.query)
     console.log('Params: ' + e.params)
     console.log('Duration: ' + e.duration + 'ms')
   })
-}
+}*/
 
 const SQL_IRRELEVANT_TAXON_RANKS = IRRELEVANT_TAXON_RANKS.map(
   (r) => `'${r}'`,
@@ -77,7 +59,7 @@ function nameDataFromRecord(record: any, ingestId: string, options?: any) {
   }
 }
 
-async function fetchNames(records: any[]) {
+async function fetchNames(records: any[], activeWfoIngestId: string) {
   return await prisma.flora_names.findMany({
     where: {
       wfo_name_reference: {
@@ -87,7 +69,7 @@ async function fetchNames(records: any[]) {
     include: {
       flora_taxa_names: {
         where: {
-          ingest_id: process.env.ACTIVE_INGEST_ID,
+          ingest_id: activeWfoIngestId,
         },
       },
     },
@@ -180,13 +162,15 @@ async function insertMissingNames(
     }
 
     // If a name doesn't exist already, linked to this wfo-* ID, create it
-    // if (!names.find((n) => n.wfo_name_reference === record.taxonID)) {
-    let insertedName = nameDataFromRecord(record, ingestId, {
-      id:
-        options && options.uuids ? options.uuids.flora_names.shift() : uuidv4(),
-    })
-    insertedNames.push(insertedName)
-    // }
+    if (!names.find((n) => n.wfo_name_reference === record.taxonID)) {
+      let insertedName = nameDataFromRecord(record, ingestId, {
+        id:
+          options && options.uuids
+            ? options.uuids.flora_names.shift()
+            : uuidv4(),
+      })
+      insertedNames.push(insertedName)
+    }
   }
   await prisma.flora_names.createMany({ data: insertedNames })
   return insertedNames
@@ -198,6 +182,7 @@ async function findOrInsertFloraTaxa(
   filteredBatch,
   floraNames,
   ingestId: string,
+  activeWfoIngestId: string,
   options: any,
 ) {
   const floraTaxa = await prisma.flora_taxa.findMany({
@@ -207,7 +192,7 @@ async function findOrInsertFloraTaxa(
           status: {
             in: ['accepted', 'unknown'],
           },
-          ingest_id: process.env.ACTIVE_INGEST_ID,
+          ingest_id: activeWfoIngestId,
           flora_names: {
             wfo_name_reference: {
               in: filteredBatch.map((r) => r.taxonID),
@@ -399,6 +384,8 @@ export async function fetchRawData(
     options.disconnectDatabase = true
   }
 
+  await prisma.$executeRaw(`TRUNCATE TABLE app.wfo_raw_data;`)
+
   if (process.env.NODE_ENV !== 'test')
     console.info('Starting WFO data import with ID ', ingestId)
   const totalRecords = await countLines(filePath)
@@ -463,14 +450,22 @@ export async function ingest(
   },
 ) {
   options = options || {}
+
   if (typeof options.disconnectDatabase === 'undefined') {
     options.disconnectDatabase = true
   }
+
   if (process.env.NODE_ENV !== 'test')
     console.info('Starting WFO ingest with ID ', ingestId)
-  //const totalRecords = await countLines(filePath)
 
   // await prisma.$executeRaw(`SET session_replication_role = 'replica';`)
+
+  const activeWfoIngest = await prisma.flora_ingests.findFirst({
+    where: {
+      active: true,
+    },
+  })
+  const activeWfoIngestId = activeWfoIngest ? activeWfoIngest.id : undefined
 
   try {
     const excludedRecords = []
@@ -503,7 +498,7 @@ export async function ingest(
 
       await prisma.$transaction(async () => {
         // Fetch names joined to "current" flora_taxon_names by wfo-* ID
-        let existingNames = await fetchNames(batch)
+        let existingNames = await fetchNames(batch, activeWfoIngestId)
 
         for (var excludedRecord of batch.filter(irrelevantTaxonRanksFilter)) {
           excludedRecords.push({
@@ -527,6 +522,7 @@ export async function ingest(
             .filter(relevantTaxonRanksFilter),
           existingNames.concat(createdNames),
           ingestId,
+          activeWfoIngestId,
           options,
         )
 
@@ -578,7 +574,7 @@ export async function ingest(
         `SELECT wfo_raw_data.* FROM wfo_raw_data WHERE wfo_raw_data."taxonomicStatus" = 'Synonym' AND wfo_raw_data.second_pass_processed = false LIMIT 1000`,
       )
 
-      let floraNames = await fetchNames(batch)
+      let floraNames = await fetchNames(batch, activeWfoIngestId)
 
       await prisma.$transaction(async () => {
         await insertSynonymFloraTaxaNames(

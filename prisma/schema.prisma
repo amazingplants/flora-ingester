@@ -11,6 +11,7 @@ datasource db {
 model flora_ingests {
   id         String      @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
   type       ingest_type
+  active     Boolean @default(false)
   created_at DateTime    @db.Timestamptz(6)
 }
 

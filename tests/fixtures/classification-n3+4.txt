@@ -1,4 +1,7 @@
 taxonID	scientificNameID	scientificName	taxonRank	parentNameUsageID	scientificNameAuthorship	family	genus	specificEpithet	infraspecificEpithet	verbatimTaxonRank	nomenclaturalStatus	namePublishedIn	taxonomicStatus	acceptedNameUsageID	nameAccordingToID	created	modified	references
+wfo-0000000001	195146-1	Cirsium caput-medusae	SPECIES		Schur ex Nyman	Asteraceae	Cirsium	caput-medusae				408 1879	Synonym	wfo-0000027702		2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-1
+wfo-0000000002	23920-2	Aster persaliens	SPECIES	wfo-4000003381	E.S.Burgess	Asteraceae	Aster	persaliens				Mem. Torrey Bot. Club 13 140 1906	Unchecked			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-10
 wfo-0000000005		Xeranthemum neumayeri	SPECIES	wfo-4000040932	Baill.	Asteraceae	Xeranthemum	neumayeri				in Bull. Soc. Linn. Par. i. (1880) 266.	Unchecked			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-10000
 wfo-0000000006		Hasteola hastata	SPECIES		(L.) Pojark.	Asteraceae	Hasteola	hastata				1960	Synonym	wfo-0000064637		2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-100000
 wfo-0000064637	982970-1	Parasenecio hastatus	SPECIES	wfo-4000028150	(L.) H.Koyama	Asteraceae	Parasenecio	hastatus				52 1995	Accepted			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-21586
+wfo-0000027702	196038-1	Cirsium spinosissimum	SPECIES	wfo-4000008373	(L.) Scop.	Asteraceae	Cirsium	spinosissimum				129 1772	Accepted			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-126774
