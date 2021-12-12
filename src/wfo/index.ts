@@ -2,7 +2,7 @@ require('custom-env').env()
 
 import { PrismaClient } from '@prisma/client'
 import * as wfo from './ingest'
-import { logStats } from './support'
+import { logStats } from '../common/support'
 import { prismaOptions } from '../common/utils'
 
 const prisma = new PrismaClient(prismaOptions)

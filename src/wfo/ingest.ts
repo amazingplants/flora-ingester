@@ -12,7 +12,7 @@ import {
   normalizedStatus,
   relevantTaxonRanksFilter,
   synonymStatusFilter,
-} from './support'
+} from '../common/support'
 
 import { logDeep } from '../common/utils'
 
@@ -22,6 +22,7 @@ import fs from 'fs'
 import parse from 'csv-parse'
 import { v4 as uuidv4 } from 'uuid'
 import { prismaOptions } from '../common/utils'
+import gnparser from 'gnparser'
 
 const prisma = new PrismaClient(prismaOptions)
 
@@ -42,7 +43,7 @@ function nameDataFromRecord(record: any, ingestId: string, options?: any) {
   // TODO all rank epithets
   return {
     id: options && options.id ? options.id : undefined,
-    scientific_name: record.scientificName,
+    scientific_name: record.name_normalized,
     family: record.family,
     genus: record.genus,
     specific_epithet: record.specificEpithet,
@@ -55,7 +56,7 @@ function nameDataFromRecord(record: any, ingestId: string, options?: any) {
       accepted_name_reference: record.acceptedNameUsageID,
       normalized_status: normalizedRecordStatus(record),
     },
-    created_by_wfo_ingest_id: ingestId,
+    created_by_ingest_id: ingestId,
   }
 }
 
@@ -221,7 +222,7 @@ async function findOrInsertFloraTaxa(
           options && options.uuids
             ? options.uuids.flora_taxa.shift()
             : uuidv4(),
-        created_by_wfo_ingest_id: ingestId,
+        created_by_ingest_id: ingestId,
       }
       createdFloraTaxa.push(createdFloraTaxon)
     }
@@ -397,10 +398,36 @@ export async function fetchRawData(
   bar.start(totalRecords, 0)
 
   for await (const batch of batches) {
+    const parsed = gnparser.parse(
+      batch.map((record) => record.scientificName),
+      { cultivars: true, details: true, diaereses: true },
+    )
     await prisma.wfo_raw_data.createMany({
-      data: batch.map((record) => {
-        record.ingest_id = ingestId
-        return record
+      data: batch.map((record, i) => {
+        const nameNormalized = parsed[i].normalized // || constructAndParseName(record).normalized
+        return {
+          taxonID: record.taxonID,
+          scientificNameID: record.scientificNameID,
+          taxonRank: record.taxonRank,
+          parentNameUsageID: record.parentNameUsageID,
+          scientificNameAuthorship: record.scientificNameAuthorship,
+          family: record.family,
+          genus: record.genus,
+          specificEpithet: record.specificEpithet,
+          infraspecificEpithet: record.infraspecificEpithet,
+          verbatimTaxonRank: record.verbatimTaxonRank,
+          nomenclaturalStatus: record.nomenclaturalStatus,
+          namePublishedIn: record.namePublishedIn,
+          taxonomicStatus: record.taxonomicStatus,
+          acceptedNameUsageID: record.acceptedNameUsageID,
+          nameAccordingToID: record.nameAccordingToID,
+          references: record.references,
+          ingest_id: ingestId,
+          name_verbatim: record.scientificName,
+          name_normalized: nameNormalized,
+          created: new Date().toISOString(),
+          modified: new Date().toISOString(),
+        }
       }),
     })
     progress += batch.length
@@ -413,6 +440,25 @@ export async function fetchRawData(
   if (options.disconnectDatabase) {
     await prisma.$disconnect()
   }
+}
+
+function constructAndParseName(record) {
+  const constructedName = constructName(record)
+  return gnparser.parse(constructedName, {
+    cultivars: true,
+    diaereses: true,
+  })
+}
+
+function constructName(record) {
+  return [
+    record.genus,
+    record.specificEpithet,
+    record.verbatimTaxonRank,
+    record.infraspecificEpithet,
+  ]
+    .filter((s) => s && s.length > 0)
+    .join(' ')
 }
 
 // Sample record format:
@@ -463,6 +509,7 @@ export async function ingest(
   const activeWfoIngest = await prisma.flora_ingests.findFirst({
     where: {
       active: true,
+      type: 'wfo',
     },
   })
   const activeWfoIngestId = activeWfoIngest ? activeWfoIngest.id : undefined
@@ -473,9 +520,6 @@ export async function ingest(
     const [{ count: firstPassTotalRecords }] = await prisma.$queryRaw(
       `SELECT COUNT(wfo_raw_data."taxonID") FROM wfo_raw_data LEFT JOIN flora_names ON wfo_raw_data."taxonID" = flora_names.wfo_name_reference AND flora_names.wfo_name_reference IS NULL WHERE wfo_raw_data.first_pass_processed = false`,
     )
-
-    // Load the TSV file, parse it, batch the records and make an iterable
-    // const firstPassBatches = await loadClassification(filePath)
 
     if (process.env.NODE_ENV !== 'test') console.info()
     if (process.env.NODE_ENV !== 'test')
@@ -493,7 +537,7 @@ export async function ingest(
 
     do {
       batch = await prisma.$queryRaw(
-        `SELECT wfo_raw_data.* FROM wfo_raw_data LEFT JOIN flora_names ON wfo_raw_data."taxonID" = flora_names.wfo_name_reference AND flora_names.wfo_name_reference IS NULL WHERE wfo_raw_data.first_pass_processed = false LIMIT 10000`,
+        `SELECT wfo_raw_data.* FROM wfo_raw_data LEFT JOIN flora_names ON wfo_raw_data."taxonID" = flora_names.wfo_name_reference AND flora_names.wfo_name_reference IS NULL WHERE wfo_raw_data.first_pass_processed = false AND wfo_raw_data.name_normalized IS NOT NULL LIMIT 10000`,
       )
 
       await prisma.$transaction(async () => {
@@ -545,9 +589,7 @@ export async function ingest(
     firstPassBar.update(firstPassTotalRecords)
     firstPassBar.stop()
 
-    // Load/parse/batch the TSV file again so we can handle synonyms
-    // We do this in a second pass so we don't have to keep the whole file in memory
-    // const secondPassBatches = await loadClassification(filePath)
+    // Load/parse/batch again so we can handle synonyms
 
     if (process.env.NODE_ENV !== 'test') console.info()
     if (process.env.NODE_ENV !== 'test')
@@ -571,7 +613,7 @@ export async function ingest(
     // then insert the flora_taxa_names record
     do {
       batch = await prisma.$queryRaw(
-        `SELECT wfo_raw_data.* FROM wfo_raw_data WHERE wfo_raw_data."taxonomicStatus" = 'Synonym' AND wfo_raw_data.second_pass_processed = false LIMIT 1000`,
+        `SELECT wfo_raw_data.* FROM wfo_raw_data WHERE wfo_raw_data."taxonomicStatus" = 'Synonym' AND wfo_raw_data.second_pass_processed = false AND wfo_raw_data.name_normalized IS NOT NULL LIMIT 1000`,
       )
 
       let floraNames = await fetchNames(batch, activeWfoIngestId)

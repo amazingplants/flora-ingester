@@ -6,3 +6,4 @@ wfo-4000000321	38260-1	Acnistus	genus	wfo-7000000572	Schott	Solanaceae						Scho
 wfo-0001019233		Alicabon barbadense	SPECIES		(Lam.) Raf.	Solanaceae	Alicabon	barbadense				Raf. et al., Sylva Tellur. 57 (1838)., 1838.	Synonym	wfo-0001024597				http://solanaceaesource.org/solanaceae/alicabon-barbadense
 wfo-0001024597		Physalis barbadensis	SPECIES		Lam.	Solanaceae	Physalis	barbadensis				Lam., Lam., and Lam., Encycl. (Lamarck) 2(1): 102. 1786 [16 Oct 1786], 1786.	Synonym	wfo-4000029503				http://solanaceaesource.org/solanaceae/physalis-barbadensis
 wfo-4000029503	329952-2	Physalis	genus	wfo-7000000572	L.	Solanaceae						K. & A.M.Lu and K. & A.M.Lu, Sp. Pl. 1: 182., 1753.	Accepted					http://solanaceaesource.org/solanaceae/physalis
+wfo-0000064637	982970-1	Parasenecio Coccineae ×hastatus	SPECIES	wfo-4000028150	(L.) H.Koyama	Asteraceae	Parasenecio	hastatus				52 1995	Accepted			2012-02-11	2012-02-11	http://www.theplantlist.org/tpl1.1/record/gcc-21586

@@ -11,14 +11,14 @@ datasource db {
 model flora_ingests {
   id         String      @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
   type       ingest_type
-  active     Boolean @default(false)
+  active     Boolean     @default(false)
   created_at DateTime    @db.Timestamptz(6)
 }
 
 model flora_taxa {
-  id                       String             @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
-  created_by_wfo_ingest_id String             @db.Uuid
-  flora_taxa_names         flora_taxa_names[]
+  id                   String             @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
+  created_by_ingest_id String             @db.Uuid
+  flora_taxa_names     flora_taxa_names[]
 
   @@index([id], name: "flora_taxa_id_idx")
 }
@@ -38,33 +38,35 @@ model flora_taxa_names {
 }
 
 model flora_names {
-  id                       String             @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
-  scientific_name          String
-  name_according_to        String?
-  name_published_in        String?
-  name_published_in_year   Int?
-  family                   String?
-  genus                    String?
-  subgenus                 String?
-  specific_epithet         String?
-  infraspecific_epithet    String?
-  name_authorship          String?
-  taxon_remarks            String?
-  taxon_rank               String
-  aggregate                String?
-  microspecies             String?
-  subspecies               String?
-  variety                  String?
-  subvariety               String?
-  form                     String?
-  subform                  Int?
-  group                    String?
-  cultivar                 String?
-  base_id                  String?            @db.Uuid
-  wfo_name_reference       String?
-  created_by_wfo_ingest_id String?            @db.Uuid
-  wfo_data                 Json?
-  flora_taxa_names         flora_taxa_names[]
+  id                     String             @id @default(dbgenerated("app.gen_random_uuid()")) @db.Uuid
+  scientific_name        String
+  name_according_to      String?
+  name_published_in      String?
+  name_published_in_year Int?
+  family                 String?
+  genus                  String?
+  subgenus               String?
+  specific_epithet       String?
+  infraspecific_epithet  String?
+  name_authorship        String?
+  taxon_remarks          String?
+  taxon_rank             String
+  aggregate              String?
+  microspecies           String?
+  subspecies             String?
+  variety                String?
+  subvariety             String?
+  form                   String?
+  subform                Int?
+  group                  String?
+  cultivar               String?
+  base_id                String?            @db.Uuid
+  wfo_name_reference     String?
+  powo_name_reference    String?
+  created_by_ingest_id   String?            @db.Uuid
+  wfo_data               Json?
+  powo_data              Json?
+  flora_taxa_names       flora_taxa_names[]
 
   @@index([family], name: "flora_names_family_idx")
   @@index([genus], name: "flora_names_genus_idx")
@@ -91,14 +93,20 @@ model red_list_data {
 }
 
 model powo_raw_data {
-  id          String  @id
-  author      String?
-  accepted    Boolean
-  family      String
-  name        String
-  rank        String
-  accepted_id String?
-  images      Json?
+  id                    String  @id
+  author                String?
+  accepted              Boolean
+  family                String
+  genus                 String?
+  specific_epithet      String?
+  infraspecific_epithet String?
+  name_verbatim         String
+  name_normalized       String?
+  rank                  String
+  accepted_id           String?
+  images                Json?
+  first_pass_processed  Boolean @default(false)
+  second_pass_processed Boolean @default(false)
 
   @@index([accepted_id], name: "powo_raw_data_accepted_id_idx")
 }
@@ -106,7 +114,8 @@ model powo_raw_data {
 model wfo_raw_data {
   taxonID                  String  @id
   scientificNameID         String
-  scientificName           String
+  name_verbatim            String
+  name_normalized          String?
   taxonRank                String
   parentNameUsageID        String
   scientificNameAuthorship String
@@ -124,8 +133,8 @@ model wfo_raw_data {
   modified                 String
   references               String
   ingest_id                String
-  first_pass_processed                Boolean @default(false)
-  second_pass_processed Boolean @default(false)
+  first_pass_processed     Boolean @default(false)
+  second_pass_processed    Boolean @default(false)
 
   @@index([taxonID], name: "wfo_raw_data_taxonID_idx")
 }

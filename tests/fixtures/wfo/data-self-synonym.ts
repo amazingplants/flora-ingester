@@ -1,7 +1,7 @@
 export const flora_taxa = [
   {
     id: 'a1781de6-ca6b-452b-b23d-b0e1f77dd6b3',
-    created_by_wfo_ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
+    created_by_ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
   },
 ]
 
@@ -41,6 +41,6 @@ export const flora_names = [
     cultivar: null,
     base_id: null,
     wfo_name_reference: 'wfo-0000582370',
-    created_by_wfo_ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
+    created_by_ingest_id: '3d7ce295-0fc3-4c35-ab71-f70ffd221f92',
   },
 ]

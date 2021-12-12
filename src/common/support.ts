@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import util from 'util'
-import { prismaOptions } from '../common/utils'
+import { prismaOptions } from './utils'
 const prisma = new PrismaClient(prismaOptions)
 
 export async function* batcher(iterable, batchSize: number = 5) {
@@ -22,7 +22,7 @@ export async function* batcher(iterable, batchSize: number = 5) {
 export async function logStats(ingestId: string, results: any) {
   const insertedNamesCount = await prisma.flora_names.count({
     where: {
-      created_by_wfo_ingest_id: ingestId,
+      created_by_ingest_id: ingestId,
     },
   })
 
@@ -60,7 +60,7 @@ export const VALID_TAXONOMIC_STATUSES = [
 ]
 
 export const IRRELEVANT_TAXON_RANKS = ['genus', 'family']
-
+normalizedRecordStatus
 export function acceptedOrUncheckedStatusFilter(record) {
   return ['accepted', 'unknown'].indexOf(normalizedRecordStatus(record)) > -1
 }
@@ -70,7 +70,13 @@ export function synonymStatusFilter(record) {
 }
 
 export function relevantTaxonRanksFilter(record) {
-  return IRRELEVANT_TAXON_RANKS.indexOf(record.taxonRank) === -1
+  // record.taxonRank for WFO; record.rank for POWO
+  const taxonRank =
+    typeof record.taxonRank === 'undefined' ? record.rank : record.taxonRank
+  if (!taxonRank) {
+    return false
+  }
+  return IRRELEVANT_TAXON_RANKS.indexOf(taxonRank.toLowerCase()) === -1
 }
 
 export function irrelevantTaxonRanksFilter(record) {

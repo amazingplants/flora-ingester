@@ -2,36 +2,9 @@ require('custom-env').env()
 import { PrismaClient } from '@prisma/client'
 import { logDeep } from '../common/utils'
 import { fetchRawData } from './ingest'
+import { prismaOptions } from '../common/utils'
 
-const prisma = new PrismaClient(
-  process.env.DEBUG
-    ? {
-        log: [
-          {
-            emit: 'event',
-            level: 'query',
-          },
-          {
-            emit: 'stdout',
-            level: 'error',
-          },
-          {
-            emit: 'stdout',
-            level: 'warn',
-          },
-        ],
-      }
-    : undefined,
-)
-
-if (process.env.DEBUG) {
-  prisma.$on('query', (e) => {
-    console.log('Query: ')
-    logDeep(e.query)
-    console.log('Params: ' + e.params)
-    console.log('Duration: ' + e.duration + 'ms')
-  })
-}
+const prisma = new PrismaClient(prismaOptions)
 
 ;(async () => {
   const ingest = await prisma.flora_ingests.create({
