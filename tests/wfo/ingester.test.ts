@@ -3,6 +3,7 @@ import {
   createDbSnapshot,
   createIngest,
   resetDatabase,
+  byId,
 } from '../support'
 
 import fixtures from '../fixtures/wfo'
@@ -36,18 +37,22 @@ describe('wfo', () => {
 
       test('creates flora_taxa', () => {
         expect(dbSnapshot.flora_taxa.length).toBe(2)
-        expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n3.flora_taxa)
+        expect(dbSnapshot.flora_taxa.sort(byId)).toMatchObject(
+          fixtures.n3.flora_taxa.sort(byId),
+        )
       })
 
       test('creates flora_names', () => {
         expect(dbSnapshot.flora_names.length).toBe(3)
-        expect(dbSnapshot.flora_names).toMatchObject(fixtures.n3.flora_names)
+        expect(dbSnapshot.flora_names.sort(byId)).toMatchObject(
+          fixtures.n3.flora_names.sort(byId),
+        )
       })
 
       test('creates flora_taxa_names', () => {
         expect(dbSnapshot.flora_taxa_names.length).toBe(3)
-        expect(dbSnapshot.flora_taxa_names).toMatchObject(
-          fixtures.n3.flora_taxa_names,
+        expect(dbSnapshot.flora_taxa_names.sort(byId)).toMatchObject(
+          fixtures.n3.flora_taxa_names.sort(byId),
         )
       })
 
@@ -115,22 +120,22 @@ describe('wfo', () => {
 
       test('creates flora_names', () => {
         expect(dbSnapshot.flora_names.length).toBe(3)
-        expect(dbSnapshot.flora_names).toMatchObject(
-          fixtures.recursiveSynonym.flora_names,
+        expect(dbSnapshot.flora_names.sort(byId)).toMatchObject(
+          fixtures.recursiveSynonym.flora_names.sort(byId),
         )
       })
 
       test('creates flora_taxa_names', () => {
         expect(dbSnapshot.flora_taxa_names.length).toBe(3)
-        expect(dbSnapshot.flora_taxa_names).toMatchObject(
-          fixtures.recursiveSynonym.flora_taxa_names,
+        expect(dbSnapshot.flora_taxa_names.sort(byId)).toMatchObject(
+          fixtures.recursiveSynonym.flora_taxa_names.sort(byId),
         )
       })
 
       afterAll(closeDatabaseConnection)
     })
 
-    describe('with records that are composed of families and genera, or are synonyms of these, or are names that don\'t parse', () => {
+    describe("with records that are composed of families and genera, or are synonyms of these, or are names that don't parse", () => {
       beforeEach(async () => {
         await resetDatabase()
         await createIngest(currentIngestId, 'wfo')
@@ -193,18 +198,22 @@ describe('wfo', () => {
 
       test('creates additional flora_taxa', () => {
         expect(dbSnapshot.flora_taxa.length).toBe(4)
-        expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n7.flora_taxa)
+        expect(dbSnapshot.flora_taxa.sort(byId)).toMatchObject(
+          fixtures.n7.flora_taxa.sort(byId),
+        )
       })
 
       test('creates additional flora_names', () => {
         expect(dbSnapshot.flora_names.length).toBe(6)
-        expect(dbSnapshot.flora_names).toMatchObject(fixtures.n7.flora_names)
+        expect(dbSnapshot.flora_names.sort(byId)).toMatchObject(
+          fixtures.n7.flora_names.sort(byId),
+        )
       })
 
       test('creates additional flora_taxa_names', () => {
         expect(dbSnapshot.flora_taxa_names.length).toBe(9)
-        expect(dbSnapshot.flora_taxa_names).toMatchObject(
-          fixtures.n7.flora_taxa_names,
+        expect(dbSnapshot.flora_taxa_names.sort(byId)).toMatchObject(
+          fixtures.n7.flora_taxa_names.sort(byId),
         )
       })
 
@@ -263,7 +272,9 @@ describe('wfo', () => {
 
       test('ignores old flora_taxa', () => {
         expect(dbSnapshot.flora_taxa.length).toBe(5)
-        expect(dbSnapshot.flora_taxa).toMatchObject(fixtures.n8.flora_taxa)
+        expect(dbSnapshot.flora_taxa.sort(byId)).toMatchObject(
+          fixtures.n8.flora_taxa.sort(byId),
+        )
       })
 
       afterAll(closeDatabaseConnection)

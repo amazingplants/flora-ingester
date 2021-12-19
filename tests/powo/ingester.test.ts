@@ -3,6 +3,7 @@ import {
   createDbSnapshot,
   createIngest,
   resetDatabase,
+  byId,
 } from '../support'
 import nock from 'nock'
 import {
@@ -52,13 +53,15 @@ describe('powo', () => {
 
       test('creates flora_names', () => {
         expect(dbSnapshot.flora_names.length).toBe(3)
-        expect(dbSnapshot.flora_names).toMatchObject(fixtures.n3.flora_names)
+        expect(dbSnapshot.flora_names.sort(byId)).toMatchObject(
+          fixtures.n3.flora_names.sort(byId),
+        )
       })
 
       test('creates flora_taxa_names', () => {
         expect(dbSnapshot.flora_taxa_names.length).toBe(3)
-        expect(dbSnapshot.flora_taxa_names).toMatchObject(
-          fixtures.n3.flora_taxa_names,
+        expect(dbSnapshot.flora_taxa_names.sort(byId)).toMatchObject(
+          fixtures.n3.flora_taxa_names.sort(byId),
         )
       })
 

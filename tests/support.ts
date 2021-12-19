@@ -39,3 +39,7 @@ export async function resetDatabase() {
 export async function closeDatabaseConnection() {
   await prisma.$disconnect()
 }
+
+export function byId(a, b) {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+}

@@ -537,7 +537,7 @@ export async function ingest(
 
     do {
       batch = await prisma.$queryRaw(
-        `SELECT wfo_raw_data.* FROM wfo_raw_data LEFT JOIN flora_names ON wfo_raw_data."taxonID" = flora_names.wfo_name_reference AND flora_names.wfo_name_reference IS NULL WHERE wfo_raw_data.first_pass_processed = false AND wfo_raw_data.name_normalized IS NOT NULL LIMIT 10000`,
+        `SELECT wfo_raw_data.* FROM wfo_raw_data LEFT JOIN flora_names ON wfo_raw_data."taxonID" = flora_names.wfo_name_reference AND flora_names.wfo_name_reference IS NULL WHERE wfo_raw_data.first_pass_processed = false AND wfo_raw_data.name_normalized IS NOT NULL ORDER BY "taxonID" ASC LIMIT 10000`,
       )
 
       await prisma.$transaction(async () => {
@@ -613,7 +613,7 @@ export async function ingest(
     // then insert the flora_taxa_names record
     do {
       batch = await prisma.$queryRaw(
-        `SELECT wfo_raw_data.* FROM wfo_raw_data WHERE wfo_raw_data."taxonomicStatus" = 'Synonym' AND wfo_raw_data.second_pass_processed = false AND wfo_raw_data.name_normalized IS NOT NULL LIMIT 1000`,
+        `SELECT wfo_raw_data.* FROM wfo_raw_data WHERE wfo_raw_data."taxonomicStatus" = 'Synonym' AND wfo_raw_data.second_pass_processed = false AND wfo_raw_data.name_normalized IS NOT NULL ORDER BY "taxonID" ASC LIMIT 1000`,
       )
 
       let floraNames = await fetchNames(batch, activeWfoIngestId)

@@ -539,7 +539,7 @@ export async function ingest(
 
     do {
       batch = await prisma.$queryRaw<powo_raw_data[]>(
-        `SELECT powo_raw_data.* FROM powo_raw_data LEFT JOIN flora_names ON powo_raw_data."id" = flora_names.powo_name_reference AND flora_names.powo_name_reference IS NULL WHERE powo_raw_data.first_pass_processed = false AND powo_raw_data.name_normalized IS NOT NULL LIMIT 10000`,
+        `SELECT powo_raw_data.* FROM powo_raw_data LEFT JOIN flora_names ON powo_raw_data."id" = flora_names.powo_name_reference AND flora_names.powo_name_reference IS NULL WHERE powo_raw_data.first_pass_processed = false AND powo_raw_data.name_normalized IS NOT NULL ORDER BY id ASC LIMIT 10000`,
       )
 
       await prisma.$transaction(async () => {
@@ -613,7 +613,7 @@ export async function ingest(
     // then insert the flora_taxa_names record
     do {
       batch = await prisma.$queryRaw<powo_raw_data[]>(
-        `SELECT powo_raw_data.* FROM powo_raw_data LEFT JOIN flora_names ON powo_raw_data."id" = flora_names.powo_name_reference AND flora_names.powo_name_reference IS NULL WHERE powo_raw_data.second_pass_processed = false AND powo_raw_data.name_normalized IS NOT NULL LIMIT 10000`,
+        `SELECT powo_raw_data.* FROM powo_raw_data LEFT JOIN flora_names ON powo_raw_data."id" = flora_names.powo_name_reference AND flora_names.powo_name_reference IS NULL WHERE powo_raw_data.second_pass_processed = false AND powo_raw_data.name_normalized IS NOT NULL ORDER BY id ASC LIMIT 10000`,
       )
 
       let floraNames = await fetchNames(batch, activePowoIngestId)

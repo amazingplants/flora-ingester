@@ -13,10 +13,10 @@
     "wfo-fetch": "NODE_ENV=production node dist/wfo/fetch --max-old-space-size=8192",
     "wfo-fetch-dev": "tsc && NODE_ENV=development node dist/wfo/fetch",
     "build": "tsc",
-    "test": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest",
-    "test-wfo": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest wfo/ingester",
-    "test-powo": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest powo/ingester",
-    "test-watch": "tsc -w && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --watch "
+    "test": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand",
+    "test-wfo": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest wfo/ingester --runInBand",
+    "test-powo": "tsc && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest powo/ingester --runInBand",
+    "test-watch": "tsc -w && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --watch --runInBand"
   },
   "author": "Toby Marsden",
   "license": "AGPL-3.0-only",
@@ -41,6 +41,7 @@
     "@types/jest": "^26.0.22",
     "@types/node": "^14.14.35",
     "@types/uuid": "^8.3.0",
+    "jest-extended": "^1.2.0",
     "nock": "^13.1.3",
     "prisma": "^2.30.3",
     "ts-jest": "^27.0.0-next.9",
