@@ -63,8 +63,8 @@ function nameDataFromRecord(record: any, ingestId: string, options?: any) {
 async function fetchNames(records: any[], activeWfoIngestId: string) {
   return await prisma.flora_names.findMany({
     where: {
-      wfo_name_reference: {
-        in: records.map((record) => record.taxonID),
+      scientific_name: {
+        in: records.map((record) => record.name_normalized),
       },
     },
     include: {
@@ -163,7 +163,7 @@ async function insertMissingNames(
     }
 
     // If a name doesn't exist already, linked to this wfo-* ID, create it
-    if (!names.find((n) => n.wfo_name_reference === record.taxonID)) {
+    if (!names.find((n) => n.scientific_name === record.name_normalized)) {
       let insertedName = nameDataFromRecord(record, ingestId, {
         id:
           options && options.uuids
@@ -195,8 +195,8 @@ async function findOrInsertFloraTaxa(
           },
           ingest_id: activeWfoIngestId,
           flora_names: {
-            wfo_name_reference: {
-              in: filteredBatch.map((r) => r.taxonID),
+            scientific_name: {
+              in: filteredBatch.map((r) => r.name_normalized),
             },
           },
         },
@@ -254,7 +254,9 @@ function generateFloraTaxaName(
   ingestId,
   options,
 ) {
-  const name = floraNames.find((n) => n.wfo_name_reference === record.taxonID)
+  const name = floraNames.find(
+    (n) => n.scientific_name === record.name_normalized,
+  )
   return {
     id:
       options && options.uuids
